@@ -1,0 +1,5 @@
+# Request ledgers written by media-text
+gemini-requests.json
+*.json.tmp
+__pycache__/
+.env
