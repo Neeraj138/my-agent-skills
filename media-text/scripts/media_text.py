@@ -206,6 +206,21 @@ def video_to_mp3(video: Path, output: Path) -> None:
         raise RuntimeError(f"Could not extract audio from {video.name}: {result.stderr[-400:]}")
 
 
+def load_api_key() -> str | None:
+    """Return GEMINI_API_KEY from the environment, else from the skill's .env file."""
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if not env_file.is_file():
+        return None
+    for line in env_file.read_text().splitlines():
+        name, sep, value = line.strip().removeprefix("export ").partition("=")
+        if sep and name.strip() == "GEMINI_API_KEY":
+            return value.strip().strip("'\"") or None
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("media", type=Path)
@@ -213,9 +228,9 @@ def main() -> int:
     parser.add_argument("--rate-state", type=Path, default=Path("gemini-requests.json"))
     parser.add_argument("--mode", choices=["auto", "image", "audio", "video"], default="auto")
     args = parser.parse_args()
-    key = os.environ.get("GEMINI_API_KEY")
+    key = load_api_key()
     if not key:
-        parser.error("GEMINI_API_KEY must be set in the environment")
+        parser.error("GEMINI_API_KEY not found in the environment or media-text/.env (see SKILL.md)")
     if not args.media.is_file():
         parser.error(f"Media file not found: {args.media}")
     mode = args.mode

@@ -9,9 +9,26 @@ description: Extract verbatim text from local images (OCR) and transcribe speech
 
 - Python 3.9+ with `requests` (`pip install requests`)
 - `ffmpeg` on `PATH` (video input only)
-- `GEMINI_API_KEY` set in the environment
+- A Gemini API key (see [API key setup](#api-key-setup))
 
-Use `scripts/media_text.py` to extract text from an image or speech from an audio/video file. It reads `GEMINI_API_KEY` from the environment, uses `gemini-3.5-flash-lite`, and writes the extracted text to a chosen output path. It does not summarize or alter the source.
+## API key setup
+
+If the script fails with `GEMINI_API_KEY not found`, walk the user through these steps. Never ask the user to paste the key into the chat, and never write, echo, or log the key yourself — the user places it.
+
+1. Open [Google AI Studio](https://aistudio.google.com/apikey) and sign in with a Google account.
+2. Click **Create API key**, pick (or create) a Google Cloud project, and copy the key (it starts with `AIza`).
+3. Store it in **one** of these places:
+   - **Skill `.env` file (recommended):** create `.env` in the `media-text/` skill directory (next to this `SKILL.md`) containing:
+     ```
+     GEMINI_API_KEY=your-key-here
+     ```
+     Then restrict it with `chmod 600 .env`. The repo's `.gitignore` already excludes `.env`, so it won't be committed.
+   - **Shell profile:** add `export GEMINI_API_KEY="your-key-here"` to `~/.bashrc` or `~/.zshrc`, then restart the terminal or run `source ~/.bashrc`.
+4. Re-run the script to confirm it works.
+
+The environment variable takes precedence over the `.env` file. The free tier has rate limits; the script's built-in pacing (below) keeps you under them.
+
+Use `scripts/media_text.py` to extract text from an image or speech from an audio/video file. It reads `GEMINI_API_KEY` from the environment (falling back to `media-text/.env`), uses `gemini-3.5-flash-lite`, and writes the extracted text to a chosen output path. It does not summarize or alter the source.
 
 For video, the script uses `ffmpeg` to make a temporary mono MP3 before sending audio to Gemini. Keep the original media separately if you need to audit the result.
 
@@ -28,4 +45,4 @@ python scripts/media_text.py image.jpg --output image.txt --rate-state ./gemini-
 python scripts/media_text.py clip.mp4 --output clip.txt --rate-state ./gemini-requests.json
 ```
 
-Set `GEMINI_API_KEY` in the process environment or a secure credential manager. Never put it in commands, source files, result files, or logs. Inspect uncertain text against the original media before treating it as a faithful quotation.
+Keep `GEMINI_API_KEY` only in the environment or the gitignored `media-text/.env`. Never put it in commands, source files, result files, or logs. Inspect uncertain text against the original media before treating it as a faithful quotation.
