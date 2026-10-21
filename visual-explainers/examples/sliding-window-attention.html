@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sliding Window Attention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F7F7;--card:#FFFFFF;--ink:#3C3C3C;--mute:#777777;--line:#E5E5E5;
+  --g:#58CC02;--b:#1CB0F6;--y:#FFC800;--o:#FF9600;--r:#FF4B4B;--p:#CE82FF;
+  --onb:#FFFFFF;--ony:#3C3C3C;
+  --rad:22px;--cr:12px;--bt:2px;--bw:6px;--cb:4px;
+  --hbg:#58CC02;--hb:#58A700;--hi:#FFFFFF;
+  --mono:"DM Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.5 "DM Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+main{max-width:980px;margin:0 auto;padding:8px 14px 40px}
+@media(min-width:760px){main{padding:8px 24px 48px}}
+
+/* control bar */
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;overflow-x:auto;padding:10px 0 12px;background:var(--bg)}
+.bar .sp{flex:1}
+.bar small{color:var(--mute);font-size:12px;white-space:nowrap}
+.btn{flex:none;font:inherit;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 14px;border-radius:999px;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;transition:transform .1s,border-bottom-width .1s}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+.btn svg{width:14px;height:14px}
+
+/* grid + cards */
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.card{grid-column:span 6;background:var(--card);border:var(--bt) solid var(--line);border-bottom-width:var(--bw);border-radius:var(--rad);padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden;min-width:0}
+@media(min-width:760px){.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}}
+.anim .card{animation:rise .55s cubic-bezier(.2,.9,.3,1.12) both;animation-delay:calc(var(--s,0)*60ms)}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.94)}}
+.hd{display:flex;align-items:center;gap:10px}
+.n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--c);color:var(--on,var(--onb));display:grid;place-items:center;font-weight:800;box-shadow:0 3px 0 color-mix(in srgb,var(--c) 70%,#000)}
+h2{margin:0;font-size:20px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.viz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:150px;background:color-mix(in srgb,var(--c) 12%,var(--card));border-radius:16px;padding:16px 14px}
+.why{margin:0;color:var(--mute);font-size:14px;line-height:1.55}.why b{color:var(--ink);font-weight:700}
+.chip{display:inline-block;padding:6px 12px;border-radius:var(--cr);background:var(--card);border:2px solid var(--line);border-bottom-width:var(--cb);font-weight:700;color:var(--ink);white-space:nowrap}
+.ro{font-size:13px;font-weight:700;color:var(--ink);text-align:center;min-height:20px}
+.ro .k{font-family:var(--mono);font-weight:500;color:var(--mute)}
+
+/* hero */
+.hero{background:var(--hbg);border-color:var(--hb);color:var(--hi);gap:16px;padding:22px}
+.hero h1{font-size:clamp(30px,6vw,46px);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
+.hero p{margin:0;font-size:17px;max-width:600px;opacity:.96}
+.hero .eyebrow{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.strip{display:flex;flex-wrap:wrap;gap:8px}
+.hero .strip .chip{border-color:var(--hb)}
+.hstage{position:relative;overflow:hidden;margin:2px -4px 0}
+.hstrip{position:relative;display:inline-block;padding:44px 8px 36px;transform-origin:0 0;white-space:nowrap}
+.hchips{display:flex;gap:8px;position:relative;z-index:2}
+.hchips .chip{border-color:var(--hb);will-change:transform,opacity}
+.win{position:absolute;z-index:1;border:3px solid #fff;border-radius:18px;background:color-mix(in srgb,#fff 18%,transparent);pointer-events:none;will-change:left,width}
+.wtag{position:absolute;left:50%;bottom:-27px;transform:translateX(-50%);background:#fff;color:var(--ink);font:800 12px/1 "DM Sans",sans-serif;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.arcs{position:absolute;inset:0;z-index:3;overflow:visible;pointer-events:none}
+
+/* attention matrices */
+.mx{position:relative;display:grid;grid-template-columns:auto repeat(8,minmax(0,1fr));gap:4px;width:100%;max-width:400px;font-size:10px}
+.mx .h{text-align:center;color:var(--mute);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:1}
+.mx .lab{text-align:right;padding-right:6px;font-weight:700;font-size:12px;color:var(--ink);align-self:center;position:relative;z-index:1;transition:color .2s}
+.mx .lab.on{color:color-mix(in srgb,var(--c) 70%,#000)}
+.mx .c{position:relative;z-index:1;height:26px;border-radius:7px;will-change:transform}
+.mx .a{background:color-mix(in srgb,var(--c) 34%,var(--card))}
+.mx .m{background:repeating-linear-gradient(45deg,transparent 0 4px,color-mix(in srgb,var(--mute) 22%,transparent) 4px 6px)}
+.mx .x{border:2px dashed color-mix(in srgb,var(--mute) 35%,transparent)}
+.rowbar{position:absolute;left:-6px;right:-6px;z-index:0;border-radius:10px;background:color-mix(in srgb,var(--c) 22%,transparent);pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;font-size:12px;color:var(--mute);font-weight:700}
+.legend i.hatch{background:repeating-linear-gradient(45deg,transparent 0 3px,color-mix(in srgb,var(--mute) 45%,transparent) 3px 5px)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.ctl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;width:100%;max-width:400px}
+.ctl input{flex:1;accent-color:var(--p);min-height:40px}
+.ctl output{font-family:var(--mono);font-weight:500;min-width:20px;text-align:right}
+
+/* chart + layers */
+svg text{font-family:"DM Sans",system-ui,sans-serif}
+.chart{width:100%;max-width:340px;overflow:visible}
+.layers{width:100%;overflow:visible}
+.reach{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.reach .chip{font-size:13px;padding:5px 10px;transition:background-color .25s,border-color .25s,transform .25s cubic-bezier(.3,1.6,.5,1)}
+.reach .chip small{font-family:var(--mono);font-weight:500;margin-left:6px;color:var(--mute)}
+.reach .chip.on{background:var(--y);border-color:color-mix(in srgb,var(--y) 70%,#000)}
+.reach .chip.on small{color:var(--ink)}
+.reach .chip.big{border-bottom-width:6px}
+@media(max-width:759px){#roK,#roR{min-height:40px}}
+
+/* rolling buffer */
+.rb{position:relative;width:100%;max-width:380px;padding-top:64px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.slot{position:relative;height:58px;border-radius:14px;border:2px dashed color-mix(in srgb,var(--r) 45%,transparent);background:color-mix(in srgb,var(--card) 60%,transparent)}
+.slot .chip{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);font-size:14px;will-change:transform,opacity}
+.slot .chip.nw{background:var(--r);color:#fff;border-color:color-mix(in srgb,var(--r) 70%,#000)}
+.slot b{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font:500 12px/1 var(--mono);color:var(--mute)}
+.head{position:absolute;top:0;width:0;display:flex;flex-direction:column;align-items:center;will-change:transform}
+.head span{font-size:12px;font-weight:800;color:#fff;background:var(--r);padding:3px 9px;border-radius:999px;box-shadow:0 3px 0 color-mix(in srgb,var(--r) 70%,#000);white-space:nowrap}
+.head i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--r);margin-top:5px}
+
+/* chunked prefill */
+.ck{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.ck .grp{display:flex;align-items:center;gap:10px}
+.ck .grp>span{width:62px;text-align:right;font-size:11px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;transition:color .25s}
+.ck .row{display:flex;gap:4px}
+.ck .t{font-size:12px;font-weight:700;padding:4px 7px;border-radius:8px;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);transition:background-color .3s,color .3s,border-color .3s,opacity .3s,transform .3s cubic-bezier(.3,1.6,.5,1)}
+.ck .act .t{background:var(--g);color:#fff;border-color:color-mix(in srgb,var(--g) 70%,#000);transform:translateY(-2px)}
+.ck .act>span{color:color-mix(in srgb,var(--g) 70%,#000)}
+.ck .cache .t{background:color-mix(in srgb,var(--g) 22%,var(--card));border-color:color-mix(in srgb,var(--g) 45%,var(--card))}
+.ck .gone .t{opacity:.4}
+.ck .wait .t{border-style:dashed;color:var(--mute)}
+.mk{display:grid;grid-template-columns:repeat(8,22px);gap:3px;position:relative}
+.mk .c{height:20px;border-radius:5px;background:repeating-linear-gradient(45deg,transparent 0 3px,color-mix(in srgb,var(--mute) 20%,transparent) 3px 5px);transition:background-color .2s}
+.mk .ok{background:color-mix(in srgb,var(--g) 30%,var(--card))}
+.mk .lit{background:var(--g)}
+.mk .done{background:color-mix(in srgb,var(--g) 60%,var(--card))}
+.mk .gap{margin-left:7px}
+.mkh{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:11px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;text-align:center;width:197px}
+
+/* payoff */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+@media(min-width:760px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{border-radius:16px;padding:14px;background:var(--card);border:2px solid color-mix(in srgb,var(--c) 30%,var(--card));border-bottom-width:4px;display:flex;flex-direction:column;gap:2px;}
+.tile{--h:0;background:color-mix(in srgb,var(--c) calc(var(--h)*18%),var(--card));border-color:color-mix(in srgb,var(--c) calc(30% + var(--h)*70%),var(--card));transform:translateY(calc(var(--h)*-3px))}
+.tile .big{font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-.02em;color:color-mix(in srgb,var(--c) 75%,#000)}
+.tile .lb{font-weight:700;font-size:14px;line-height:1.3}
+.tile .sb{font-size:12px;color:var(--mute);font-family:var(--mono)}
+
+.foot{text-align:center;color:var(--mute);font-size:13px;margin:22px 0 0}
+.foot a{color:var(--b);font-weight:700}
+
+.htop{display:flex;flex-direction:column;gap:14px}
+.htxt{display:flex;flex-direction:column;gap:12px}
+.why.short{display:none}
+.plg{display:none;gap:14px;justify-content:center;font-size:14px;font-weight:700;color:var(--mute)}
+.plg i{display:inline-block;width:15px;height:15px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+@media(max-width:759px){.layers .ll{font-size:26px}}
+/* square poster for posting: ?poster=1 (1200 x 1200) */
+.poster body{width:1200px;height:1200px;overflow:hidden}
+.poster main{width:1200px;max-width:none;height:1200px;padding:26px!important}
+.poster .bar,.poster .foot,.poster .c7,.poster .legend,.poster .ctl,.poster .why.long{display:none}
+.poster .why.short{display:block;font-size:14.5px}
+.poster .grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr 1fr;height:100%}
+.poster .card{grid-column:span 1!important;padding:18px;gap:12px}
+.poster .hero{grid-column:1/-1!important;padding:22px 26px 14px;gap:4px}
+.poster .htop{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:28px}
+.poster .htxt{gap:8px;max-width:640px}
+.poster .hero h1{font-size:50px}
+.poster .hero p{font-size:17.5px}
+.poster .hstats{display:grid;grid-template-columns:auto auto;justify-items:stretch;gap:8px;flex:none;margin-top:6px}
+.poster .hstats .chip{text-align:center}
+.poster .viz{gap:10px;padding:12px}
+.poster .mx .c{height:22px}
+.poster .rb{padding-top:58px}
+.poster .eyebrow{display:none}
+.poster .hero{padding:22px 26px 10px}
+.poster .hero h1{font-size:48px}
+.poster .hero p{font-size:17px;max-width:620px}
+.poster .hstrip{padding:40px 8px 32px}
+.poster .mx{gap:3px}
+.poster .mx .c{height:19px;border-radius:6px}
+.poster .ck{gap:4px}
+.poster .mk{grid-template-columns:repeat(8,19px)}
+.poster .mk .c{height:15px;border-radius:4px}
+.poster .mkh{width:172px}
+.poster .why.short{font-size:17px;line-height:1.4;color:var(--ink);font-weight:600}
+.poster .why.short b{font-weight:800}
+.poster .card h2{font-size:23px}
+.poster .mx .h{display:none}
+.poster .mx .lab{font-size:15px}
+.poster .mx .c{height:21px}
+.poster .mx .m{background:color-mix(in srgb,var(--mute) 13%,transparent)}
+.poster .mx .x{border:2px solid color-mix(in srgb,var(--mute) 55%,transparent);background:var(--card)}
+.poster .ro{font-size:16px}
+.poster .ro .k{font-size:15px}
+.poster #roF .k,.poster #roS .k{display:none}
+.poster .reach .chip:nth-child(2){display:none}
+.poster .reach .chip:nth-child(3){display:none}
+.poster .reach .chip{font-size:15px}
+.poster .reach .chip small{font-size:13px}
+.poster .layers .ll{font-size:24px}
+.poster .slot .chip{font-size:16px}
+.poster .slot b{font-size:14px}
+.poster .ck .t{font-size:14px;padding:2px 7px}
+.poster .ck .grp>span{width:30px;font-size:15px}
+.poster .mkh{font-size:13px}
+.poster .plg{display:flex}
+.poster .cw{display:none}
+.cw{font-style:normal}
+.capture .bar{display:none}
+/* 4:5 portrait poster: ?poster=45 (1024 x 1280) */
+.p45 body{width:1024px;height:1280px}
+.p45 main{width:1024px;height:1280px;padding:22px!important}
+.p45 .hero{padding:22px 24px 10px}
+.p45 .htop{flex-direction:column;gap:14px}
+.p45 .htxt{max-width:none}
+.p45 .hero h1{font-size:52px}
+.p45 .hero p{font-size:18px;max-width:none}
+.p45 .hstats{display:flex;flex-wrap:wrap;margin:0}
+.p45 .hstats .chip{font-size:15px}
+.p45 .card{padding:16px;gap:12px}
+.p45 .card h2{font-size:22px}
+.p45 .viz{padding:12px 10px}
+.p45 .mx .c{height:24px}
+.p45 #roR .k{display:none}
+.p45 .layers line{stroke-width:3.5px}
+.p45 .layers .ll{font-size:26px}
+.p45 .reach{flex-direction:column;align-items:center}
+.p45 .slots{gap:6px}
+.p45 .slot .chip{font-size:14px;padding:5px 9px}
+.p45 .rb{padding-top:56px}
+.p45 .chart{max-width:none}
+.p45 .ck .t{font-size:14px;padding:2px 6px}
+.p45 .plg{gap:10px;font-size:14px}
+.poster .chart text{font-size:17px}
+.poster .wtag{font-size:14px;padding:6px 11px;bottom:-30px}
+.poster .head span{font-size:14px}
+.p45 .layers .ll{font-size:28px}
+.poster .reach .chip small{font-size:14px}
+.poster .ck .t{font-size:14px}
+.poster .mkh{font-size:14px}
+.capture *,.capture *::before,.capture *::after{transition:none!important}
+.capture:not(.poster) main{padding-top:20px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head>
+<body><main>
+
+<nav class="bar" aria-label="Animation controls">
+  <button class="btn" id="play" aria-pressed="false"><svg viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1.5" fill="currentColor"/></svg><span>Pause</span></button>
+  <button class="btn sp-b" data-sp="0.5" aria-pressed="false">0.5×</button>
+  <button class="btn sp-b" data-sp="1" aria-pressed="true">1×</button>
+  <button class="btn sp-b" data-sp="2" aria-pressed="false">2×</button>
+  <span class="sp"></span><small>One 8-second loop drives every card</small>
+</nav>
+
+<div class="grid" id="grid">
+
+<section class="card hero" style="--s:0">
+  <div class="htop"><div class="htxt">
+  <span class="eyebrow">How some LLMs handle long text</span>
+  <h1>Sliding window attention</h1>
+  <p>Each token attends only to the last <b>W</b> tokens instead of the whole history. With W = 4,096 and 32 layers, information can still travel about 131K tokens back, in theory.</p>
+  </div>
+  <div class="strip hstats"><span class="chip">W = 4,096</span><span class="chip">32 layers</span><span class="chip">cost O(n·W), not O(n²)</span><span class="chip">fixed-size KV cache</span></div></div>
+  <div class="hstage" id="hstage" role="img" aria-label="A highlighted window of four tokens slides along a sentence. The newest token in the window attends to the three before it.">
+    <div class="hstrip" id="hstrip">
+      <svg class="arcs" id="arcs" aria-hidden="true"></svg>
+      <div class="win" id="win"><span class="wtag">window · W = 4</span></div>
+      <div class="hchips" id="hchips"></div>
+    </div>
+  </div>
+</section>
+
+<section class="card s3" style="--c:var(--b);--s:1"><div class="hd"><span class="n">1</span><h2>Full causal attention</h2></div>
+  <div class="viz">
+    <div class="mx" id="mxF" role="img" aria-label="Causal attention grid: each row attends to every earlier token, a triangle that grows with n squared"></div>
+    <div class="ro" id="roF"></div>
+    <div class="legend"><span><i style="background:color-mix(in srgb,var(--b) 34%,#fff)"></i>attends</span><span><i class="hatch"></i>future, masked</span></div>
+  </div>
+  <p class="why long"><b>The problem:</b> every new token scores every earlier one, so work grows with n². At 32K tokens that's over 500 million scores per head, per layer, and a KV cache that keeps growing.</p>
+  <p class="why short"><b>Problem:</b> every token scores every earlier one. Work grows with n².</p>
+</section>
+
+<section class="card s3" style="--c:var(--p);--s:2"><div class="hd"><span class="n">2</span><h2>Slide a window</h2></div>
+  <div class="viz">
+    <div class="mx" id="mxS" role="img" aria-label="Sliding window grid: each row attends only to a band of the most recent W tokens"></div>
+    <div class="ro" id="roS"></div>
+    <div class="plg"><span><i style="background:color-mix(in srgb,var(--p) 34%,#fff)"></i>window</span><span><i style="border:2px solid color-mix(in srgb,var(--mute) 55%,transparent)"></i>dropped</span><span><i style="background:color-mix(in srgb,var(--mute) 13%,transparent)"></i>future</span></div>
+    <label class="ctl">Window W <input type="range" id="wIn" min="1" max="8" value="3" aria-label="Window size W"><output id="wOut">3</output></label>
+    <div class="legend"><span><i style="background:color-mix(in srgb,var(--p) 34%,#fff)"></i>in window</span><span><i style="border:2px dashed color-mix(in srgb,var(--mute) 35%,transparent)"></i>dropped</span><span><i class="hatch"></i>future</span></div>
+  </div>
+  <p class="why long"><b>The fix:</b> each token looks back at only the W most recent tokens (a real-scale choice is W = 4,096). Older tokens fall out of view, so a row never costs more than W scores. Drag the slider to change W.</p>
+  <p class="why short"><b>Fix:</b> look back only W tokens. A row never costs more than W.</p>
+</section>
+
+<section class="card s2" style="--c:var(--o);--s:3"><div class="hd"><span class="n">3</span><h2>Cost turns linear</h2></div>
+  <div class="viz">
+    <svg class="chart" id="chart" viewBox="0 0 300 190" role="img" aria-label="Attention work versus sequence length. Full attention curves up quadratically; sliding window matches it until W, then grows in a straight line."></svg>
+    <div class="ro" id="roC"></div>
+  </div>
+  <p class="why long"><b>Why:</b> up to W tokens nothing changes. Past W, each new token adds a fixed W scores, so total work grows in a straight line. The chart is theory; one reported implementation measured about <b>2× faster</b> wall-clock (W = 4,096, 16K tokens).</p>
+  <p class="why short">Past W, each token adds a fixed W scores: a line, not a curve.</p>
+</section>
+
+<section class="card s4" style="--c:var(--y);--on:var(--ony);--s:4"><div class="hd"><span class="n">4</span><h2>Layers add reach</h2></div>
+  <div class="viz">
+    <svg class="layers" id="layers" viewBox="0 0 530 226" role="img" aria-label="Five rows of tokens. Going down from the top token, the region it can see widens by two tokens per layer."></svg>
+    <div class="reach" id="reach">
+      <span class="chip">↓ 1 layer<small>4,096</small></span>
+      <span class="chip">↓ 2 layers<small>8,192</small></span>
+      <span class="chip">↓ 3 layers<small>12,288</small></span>
+      <span class="chip">↓ 4 layers<small>16,384</small></span>
+      <span class="chip big">32 layers<small>≈131K max</small></span>
+    </div>
+  </div>
+  <p class="why long"><b>Why it still sees far:</b> follow the top token down. Each layer it passes through reads a window of the layer below, which already mixed in its own window. After k layers, information can move up to <b>k × W</b> tokens: 32 × 4,096 ≈ 131K, in theory. Toy here: a window of 3 including itself, so each layer adds 2.</p>
+  <p class="why short">Each layer reads a window of the one below. Reach ≈ <b>k × W</b>.</p>
+</section>
+
+<section class="card s3" style="--c:var(--r);--s:5"><div class="hd"><span class="n">5</span><h2>Rolling buffer cache</h2></div>
+  <div class="viz">
+    <div class="rb" id="rb" role="img" aria-label="A cache of four slots. Each new token is written into slot i mod 4, pushing out the oldest token.">
+      <div class="head" id="head"><span>write</span><i></i></div>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="ro" id="roR" style="margin-top:18px"></div>
+  </div>
+  <p class="why long"><b>Why:</b> nothing older than W is ever needed, so the KV cache is a fixed array of W slots. Token i writes to slot <b>i mod W</b>, replacing the oldest entry. At 32K tokens this cuts cache memory <b>8×</b>.</p>
+  <p class="why short">Fixed W slots. Token i overwrites slot <b>i mod W</b>. 8× less memory at 32K.</p>
+</section>
+
+<section class="card s3" style="--c:var(--g);--s:6"><div class="hd"><span class="n">6</span><h2>Pre-fill in chunks</h2></div>
+  <div class="viz">
+    <div class="ck" id="ck"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div class="mkh"><span>cache</span><span>chunk</span></div>
+      <div class="mk" id="mk" role="img" aria-label="Attention mask for one chunk: each row attends to itself, earlier tokens in the chunk, and recent tokens from the cache."></div>
+    </div>
+    <div class="ro" id="roK"></div>
+  </div>
+  <p class="why long"><b>Why:</b> a long prompt is known up front, so it is fed in chunks the size of the window. Each chunk attends to itself (causally) and to the cache, then its keys and values take over the cache.</p>
+  <p class="why short">Prompts go in W-sized chunks; each sees itself + the cache.</p>
+</section>
+
+<section class="card c7" style="--c:var(--b);--s:7"><div class="hd"><span class="n">7</span><h2>What it buys at real scale</h2></div>
+  <div class="viz" style="align-items:stretch">
+    <div class="tiles" id="tiles">
+      <div class="tile"><span class="big" data-to="131" data-pre="≈" data-suf="K">≈131K</span><span class="lb">theoretical reach at the last layer</span><span class="sb">4,096 × 32 layers</span></div>
+      <div class="tile"><span class="big" data-to="8" data-suf="×">8×</span><span class="lb">less cache memory</span><span class="sb">at 32K tokens</span></div>
+      <div class="tile"><span class="big" data-to="2" data-suf="×">2×</span><span class="lb">faster in one reported implementation</span><span class="sb">W = 4,096 · 16K tokens</span></div>
+      <div class="tile"><span class="big" data-to="4096">4,096</span><span class="lb">cache entries per layer, at most</span><span class="sb">cache = W slots</span></div>
+    </div>
+  </div>
+  <p class="why long"><b>Note:</b> 131K is an upper bound on how far information can flow, not a promise that the model uses it all. Measured speedups depend on the attention kernel.</p>
+</section>
+
+</div>
+<p class="foot">Diagrams use toy sizes (W = 3 or 4). Real-scale numbers assume W = 4,096 and 32 layers.</p>
+</main>
+
+<script>
+(function(){
+var P=8000,R=document.documentElement,Q=new URLSearchParams(location.search);
+var CAPTURE=Q.has('capture'),FIX=Q.has('t')?+Q.get('t'):null;
+var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(Q.has('poster'))R.classList.add('poster');
+if(Q.get('poster')==='45')R.classList.add('p45');
+if(CAPTURE)R.classList.add('capture');else if(!RM)R.classList.add('anim');
+var $=function(id){return document.getElementById(id)};
+var clamp=function(x,a,b){a=a==null?0:a;b=b==null?1:b;return x<a?a:x>b?b:x};
+var seg=function(t,a,b){return clamp((t-a)/(b-a))};
+var lerp=function(a,b,f){return a+(b-a)*f};
+var E={io:function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},
+  out:function(x){return 1-Math.pow(1-x,3)},
+  back:function(x){var c=1.6;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)}};
+var bump=function(x){return Math.sin(Math.PI*clamp(x))};
+var SVGNS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+/* ---------- HERO: window slides along a sentence ---------- */
+var HT=['The','cat','sat','on','the','mat','while','the','dog','slept','by','the','warm','fire','as','rain','fell'],HW=4;
+var hchips=$('hchips'),hEls=HT.map(function(w){var c=document.createElement('span');c.className='chip';c.textContent=w;hchips.appendChild(c);return c});
+var win=$('win'),arcs=$('arcs'),hstrip=$('hstrip'),hstage=$('hstage'),HL=[],HR=[],hTop=0,hH=0,arcEls=[];
+for(var a=0;a<HW-1;a++){var g=S('g',{},arcs);arcEls.push({p:S('path',{fill:'none',stroke:'#fff','stroke-width':3,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':'1 1'},g),d:S('circle',{r:4.5,fill:'#fff'},g)})}
+function measureHero(){
+  hstrip.style.transform='none';
+  HL=hEls.map(function(e){return e.offsetLeft+hchips.offsetLeft});HR=hEls.map(function(e,i){return HL[i]+e.offsetWidth});
+  HC=HL.map(function(l,i){return (l+HR[i])/2});
+  hTop=hchips.offsetTop;hH=hEls[0].offsetHeight;
+  arcs.setAttribute('width',hstrip.offsetWidth);arcs.setAttribute('height',hstrip.offsetHeight);
+  hSc=Math.max(.82,Math.min(1,hstage.clientWidth/hstrip.offsetWidth));hstage.style.height=(hstrip.offsetHeight*hSc)+'px';
+}
+var HC=[],hSc=1;
+function edgeAt(arr,x){x=clamp(x,0,arr.length-1);var i=Math.floor(x),f=x-i;if(i>=arr.length-1)return arr[arr.length-1];return lerp(arr[i],arr[i+1],f)}
+function hero(t){
+  var first=HW-1,last=HT.length-1,n=last-first,pos,ga=1,land=0;
+  if(t<400){pos=first}
+  else if(t<6800){var x=(t-400)/6400*n,i=Math.floor(x),f=x-i;pos=first+i+E.io(seg(f,0,.42));land=seg(f,.42,.7)}
+  else if(t<7600){pos=last;ga=1-E.io(seg(t,7300,7600))}
+  else{pos=first;ga=E.io(seg(t,7600,7900))}
+  var lo=pos-HW+1;
+  hEls.forEach(function(el,j){
+    var w=clamp(1-Math.max(0,lo-j,j-pos)),q=clamp(1-Math.abs(j-pos))*ga;
+    el.style.opacity=(.42+.58*w*ga).toFixed(3);
+    el.style.background=q>0?'color-mix(in srgb,var(--y) '+(q*100).toFixed(1)+'%,#fff)':'';
+    el.style.borderColor=q>0?'color-mix(in srgb,color-mix(in srgb,var(--y) 70%,#000) '+(q*100).toFixed(1)+'%,var(--hb))':'';
+    el.style.transform='translateY('+(-5*q).toFixed(2)+'px)';
+  });
+  var L=edgeAt(HL,lo)-8,Rr=edgeAt(HR,pos)+8;
+  win.style.left=L+'px';win.style.width=(Rr-L)+'px';win.style.top=(hTop-8)+'px';win.style.height=(hH+16)+'px';
+  win.style.opacity=ga.toFixed(3);win.style.transform='scale('+(.96+.04*ga).toFixed(3)+')';
+  // pan the strip so the window stays in view on narrow screens
+  var sw=hstrip.offsetWidth*hSc,vw=hstage.clientWidth,tx=0;
+  if(sw>vw){tx=clamp(vw/2-((L+Rr)/2)*hSc,vw-sw,0)}
+  hstrip.style.transform='translateX('+tx.toFixed(1)+'px) scale('+hSc+')';
+  // attention arcs ride along with the window; they pulse when it lands
+  var qx=edgeAt(HC,pos),y0=hTop-4,pulse=bump(land);
+  arcEls.forEach(function(A,k){
+    var j=pos-1-k;if(j<-.001){A.p.style.opacity=0;A.d.style.opacity=0;return}
+    var tx2=edgeAt(HC,j),h=16+Math.abs(qx-tx2)*.22;
+    A.p.setAttribute('d','M'+qx.toFixed(1)+' '+y0+' C'+qx.toFixed(1)+' '+(y0-h).toFixed(1)+' '+tx2.toFixed(1)+' '+(y0-h).toFixed(1)+' '+tx2.toFixed(1)+' '+y0);
+    A.p.setAttribute('stroke-dashoffset',0);A.p.setAttribute('stroke-width',(3+1.5*pulse).toFixed(2));
+    A.p.style.opacity=ga.toFixed(3);
+    A.d.setAttribute('cx',tx2.toFixed(1));A.d.setAttribute('cy',y0);A.d.setAttribute('r',(4.5+2*pulse).toFixed(2));A.d.style.opacity=ga.toFixed(3);
+  });
+}
+
+/* ---------- CARDS 1 + 2: attention matrices ---------- */
+var MT=['The','cat','sat','on','the','mat','and','slept'],N=8,Wsw=3;
+function buildMx(el){
+  var h='<div class="rowbar"></div><span class="h"></span>';MT.forEach(function(w){h+='<span class="h">'+w+'</span>'});
+  for(var i=0;i<N;i++){h+='<span class="lab">'+MT[i]+'</span>';for(var j=0;j<N;j++)h+='<span class="c" data-i="'+i+'" data-j="'+j+'"></span>'}
+  el.innerHTML=h;var cells=[];el.querySelectorAll('.c').forEach(function(c){cells.push({el:c,i:+c.dataset.i,j:+c.dataset.j,st:''})});
+  return {el:el,cells:cells,labs:el.querySelectorAll('.lab'),bar:el.querySelector('.rowbar'),tops:[],hgt:0};
+}
+var MF=buildMx($('mxF')),MS=buildMx($('mxS'));
+function measureMx(M){M.tops=[];for(var i=0;i<N;i++){var c=M.cells[i*N].el;M.tops.push(c.offsetTop)}M.hgt=M.cells[0].el.offsetHeight}
+function mx(M,t,W,ro,name){
+  var r=Math.floor(t/1000)%N,f=(t%1000)/1000,pv=(r+N-1)%N;
+  var top=lerp(M.tops[pv]||0,M.tops[r]||0,E.io(seg(f,0,.28)));
+  M.bar.style.top=(top-3)+'px';M.bar.style.height=(M.hgt+6)+'px';
+  var rr=f<.28?pv:r;M.labs.forEach(function(l,i){l.classList.toggle('on',i===rr)});
+  var cnt=0,tot=0,cntP=0;
+  M.cells.forEach(function(C){
+    var st=C.j>C.i?'m':(C.j>C.i-W?'a':'x');if(st==='a'){tot++;if(C.i===r)cnt++;if(C.i===pv)cntP++}
+    if(st!==C.st){C.el.className='c '+st;C.st=st}
+    if(C.i===r&&st==='a'){
+      var d=C.j-Math.max(0,r-W+1),p=seg(f,.26+d*.05,.46+d*.05);
+      C.el.style.background=p>0?'color-mix(in srgb,var(--c) '+(34+66*E.out(p)).toFixed(1)+'%,var(--card))':'';
+      C.el.style.transform='scale('+(1+.16*bump(p)).toFixed(3)+')';
+    }else if(C.i===pv&&st==='a'&&f<.28){
+      C.el.style.background='color-mix(in srgb,var(--c) '+(100-66*E.io(f/.28)).toFixed(1)+'%,var(--card))';C.el.style.transform='';
+    }else if(C.el.style.background||C.el.style.transform){C.el.style.background='';C.el.style.transform=''}
+  });
+  var cr=rr===r?cnt:cntP;ro.innerHTML='“'+MT[rr]+'” attends to <b>'+cr+'</b> token'+(cr>1?'s':'')+' <span class="k">· '+tot+'/36 scores</span>';
+}
+$('wIn').addEventListener('input',function(e){Wsw=+e.target.value;$('wOut').textContent=Wsw;if(paused)draw()});
+
+/* ---------- CARD 3: cost chart ---------- */
+var CH=$('chart'),X=function(n){return 34+n/32*254},Y=function(v){return 150-v*128};
+(function(){
+  S('line',{x1:34,y1:150,x2:290,y2:150,stroke:'var(--line)','stroke-width':2.5,'stroke-linecap':'round'},CH);
+  S('line',{x1:34,y1:150,x2:34,y2:16,stroke:'var(--line)','stroke-width':2.5,'stroke-linecap':'round'},CH);
+  [0,8,16,24,32].forEach(function(n){var tx=S('text',{x:X(n),y:170,'text-anchor':'middle','font-size':13,'font-weight':700,fill:'var(--mute)'},CH);tx.textContent=n?n+'K':'0'});
+  var t2=S('text',{x:12,y:84,'text-anchor':'middle','font-size':13,'font-weight':700,fill:'var(--mute)',transform:'rotate(-90 12 84)'},CH);t2.textContent='work';
+  S('line',{x1:X(4),y1:150,x2:X(4),y2:24,stroke:'color-mix(in srgb,var(--o) 70%,#000)','stroke-width':2,'stroke-dasharray':'3 5',opacity:.55},CH);
+  var tw=S('text',{x:X(4),y:186,'text-anchor':'middle','font-size':13,'font-weight':800,fill:'color-mix(in srgb,var(--o) 70%,#000)'},CH);tw.textContent='W';
+})();
+var clip=S('clipPath',{id:'clp'},S('defs',{},CH)),clipR=S('rect',{x:0,y:0,width:0,height:186},clip);
+var plot=S('g',{'clip-path':'url(#clp)'},CH);
+function curve(fn){var d='';for(var n=0;n<=32;n+=.25)d+=(n?'L':'M')+X(n).toFixed(1)+' '+Y(fn(n)).toFixed(1)+' ';return d}
+var fFull=function(n){return n*n/2/512},fSw=function(n){return (n<=4?n*n/2:4*n-8)/512};
+S('path',{d:curve(fFull),fill:'none',stroke:'var(--mute)','stroke-width':3,'stroke-dasharray':'6 6','stroke-linecap':'round'},plot);
+S('path',{d:curve(fSw),fill:'none',stroke:'var(--o)','stroke-width':4.5,'stroke-linecap':'round'},plot);
+var scan=S('line',{y1:18,y2:150,stroke:'var(--ink)','stroke-width':2,opacity:.25},CH);
+var dF=S('circle',{r:5.5,fill:'#fff',stroke:'var(--mute)','stroke-width':3},CH),dS=S('circle',{r:6,fill:'var(--o)',stroke:'#fff','stroke-width':2.5},CH);
+var lF=S('text',{x:286,y:14,'text-anchor':'end','font-size':14,'font-weight':800,fill:'var(--mute)'},CH);lF.textContent='full · O(n²)';
+var lS=S('text',{x:288,y:144,'text-anchor':'end','font-size':13,'font-weight':800,fill:'color-mix(in srgb,var(--o) 70%,#000)'},CH);lS.textContent='sliding · O(n·W)';
+if(R.classList.contains('poster')){lF.textContent='O(n²)';lS.textContent='O(n·W)';lS.setAttribute('y',110)}
+function chart(t){
+  var p=E.io(seg(t,300,6300)),n=32*p,x=X(n),vis=Math.min(seg(t,0,300),1-seg(t,7500,8000));
+  clipR.setAttribute('width',x);scan.setAttribute('x1',x);scan.setAttribute('x2',x);
+  dF.setAttribute('cx',x);dF.setAttribute('cy',Y(fFull(n)));dS.setAttribute('cx',x);dS.setAttribute('cy',Y(fSw(n)));
+  [plot,scan,dF,dS].forEach(function(e){e.style.opacity=vis*(e===scan?.25:1)});
+  var la=vis*seg(n,24,29);lF.style.opacity=la;lS.style.opacity=la;
+  var nk=Math.round(n*1024),ratio=n>4?fFull(n)/fSw(n):1,ro=$('roC');ro.style.opacity=vis.toFixed(3);
+  ro.innerHTML='n = <span class="k">'+(nk>=1000?(nk/1024).toFixed(1)+'K':nk)+'</span> · '+(n<=4?'same as full':'<b>'+ratio.toFixed(1)+'×</b> less work');
+}
+
+/* ---------- CARD 4: layers stack the reach ---------- */
+var LY=$('layers'),COLS=11,LV=4,LW=3,cx=function(c){return 92+c*42},cy=function(k){return 200-k*44};
+['input','L1','L2','L3','L4'].forEach(function(s,k){var t=S('text',{x:4,y:cy(k)+6,'class':'ll','font-size':15,'font-weight':800,fill:'var(--mute)'},LY);t.textContent=s});
+var bands=[],edges=[],nodes=[];
+for(var k=0;k<=LV;k++)bands.push(S('rect',{y:cy(k)-15,height:30,rx:15,fill:'var(--y)',opacity:0},LY));
+var eg=S('g',{},LY);
+// reach at level k (counting down from top): leftmost col visible
+function lo(k){return 10-(LV-k)*(LW-1)}
+for(k=LV;k>=1;k--){var es=[];for(var c=lo(k);c<=10;c++)for(var d=0;d<LW;d++){var c2=c-d;if(c2<0)continue;
+  es.push(S('line',{x1:cx(c),y1:cy(k)-0,x2:cx(c2),y2:cy(k-1),stroke:'color-mix(in srgb,var(--y) 72%,#000)','stroke-width':2.5,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':'1 1','stroke-dashoffset':1,opacity:.55},eg))}
+  edges[k]=es}
+for(k=0;k<=LV;k++){nodes[k]=[];for(c=0;c<COLS;c++){
+  var g=S('g',{},LY);S('circle',{cx:cx(c),cy:cy(k),r:9,fill:'#fff',stroke:'color-mix(in srgb,var(--y) 40%,var(--line))','stroke-width':2.5},g);
+  var on=S('circle',{cx:cx(c),cy:cy(k),r:9,fill:'var(--y)',stroke:'color-mix(in srgb,var(--y) 70%,#000)','stroke-width':2.5,style:'transform-box:fill-box;transform-origin:center;transform:scale(0)'},g);
+  nodes[k].push(on)}}
+var reachChips=$('reach').querySelectorAll('.chip');
+if(R.classList.contains('p45'))LY.querySelectorAll('circle').forEach(function(c){c.setAttribute('r',11)});
+function layers(t){
+  var gfade=1-seg(t,7300,7900);
+  for(var k=LV;k>=0;k--){
+    var st=k===LV?300:900+(LV-1-k)*1300,           // level k lights at st
+        ep=k<LV?E.io(seg(t,st,st+700)):0,             // edges from k+1 down to k
+        np=E.back(seg(t,k===LV?st:st+450,(k===LV?st:st+450)+450));
+    if(k<LV)edges[k+1].forEach(function(e){e.setAttribute('stroke-dashoffset',(1-ep).toFixed(3));e.style.opacity=(.55*gfade).toFixed(3)});
+    var l=lo(k);
+    nodes[k].forEach(function(nd,c){var s=c>=l?np*gfade:0;nd.style.transform='scale('+Math.max(0,s).toFixed(3)+')'});
+    var b=bands[k],bw=cx(10)-cx(l)+34;b.setAttribute('x',cx(10)+17-bw*clamp(np));b.setAttribute('width',Math.max(0,bw*clamp(np)));b.setAttribute('opacity',(.28*clamp(np)*gfade).toFixed(3));
+  }
+  var hop=0;for(k=LV-1;k>=0;k--){if(t>=900+(LV-1-k)*1300+450)hop++}
+  reachChips.forEach(function(ch,i){var at=i<4?900+(LV-1-(LV-1-i))*1300+450:6100,on=gfade>.5&&t>=at;
+    ch.classList.toggle('on',on);var p=on?seg(t,at,at+380):0;ch.style.transform=on?'translateY('+(-2*E.out(p)).toFixed(2)+'px) scale('+(1+.12*bump(p)).toFixed(3)+')':''});
+}
+
+/* ---------- CARD 5: rolling buffer ---------- */
+var RW=['The','cat','sat','on','the','mat','and','slept'],SL=4,slotsEl=$('slots'),slots=[];
+for(var s=0;s<SL;s++){var se=document.createElement('div');se.className='slot';se.innerHTML='<span class="chip"></span><span class="chip"></span><b>slot '+s+'</b>';slotsEl.appendChild(se);
+  var cs=se.querySelectorAll('.chip');slots.push({el:se,cur:cs[0],old:cs[1]})}
+var headEl=$('head'),slotX=[];
+function measureRb(){slotX=slots.map(function(o){return o.el.offsetLeft+o.el.offsetWidth/2})}
+function wd(step){return RW[((step%8)+8)%8]}
+function rolling(t){
+  var st=Math.floor(t/1000)%8,f=(t%1000)/1000,ws=st%SL;
+  slots.forEach(function(o,k){
+    if(k===ws){
+      var ev=seg(f,0,.22),dr=seg(f,.14,.62);
+      o.old.textContent=wd(st-SL);o.old.style.opacity=(1-ev).toFixed(3);
+      o.old.style.transform='translate(-50%,-50%) translateY('+(ev*16).toFixed(1)+'px) rotate('+(ev*10).toFixed(1)+'deg) scale('+(1-.3*ev).toFixed(3)+')';
+      o.cur.textContent=wd(st);o.cur.classList.add('nw');o.cur.style.opacity=clamp(dr*3).toFixed(3);
+      o.cur.style.transform='translate(-50%,-50%) translateY('+(-62*(1-E.back(dr))).toFixed(1)+'px) scale('+(.7+.3*E.out(dr)).toFixed(3)+')';
+    }else{
+      var last=st-((st-k)%SL+SL)%SL;o.cur.textContent=wd(last);o.cur.classList.toggle('nw',k===(ws+SL-1)%SL&&f<.14);o.cur.style.background='';
+      o.cur.style.opacity=1;o.cur.style.transform='translate(-50%,-50%)';o.old.style.opacity=0;
+    }
+  });
+  var prev=(ws+SL-1)%SL,hp=E.io(seg(f,0,.22)),hx,ho=1;
+  if(ws===0){hx=hp<.5?slotX[prev]:slotX[0];ho=1-bump(hp)}else hx=lerp(slotX[prev]||0,slotX[ws]||0,hp);
+  headEl.style.opacity=ho.toFixed(3);
+  headEl.style.transform='translateX('+(hx||0).toFixed(1)+'px) translateY('+(-3*bump(seg(f,.5,.75))).toFixed(1)+'px)';
+  var sh=f<.14?st-1:st;
+  $('roR').innerHTML='new token “'+wd(sh)+'” → <b>slot '+(((sh%SL)+SL)%SL)+'</b> <span class="k">= i mod 4</span>';
+}
+
+/* ---------- CARD 6: chunked pre-fill ---------- */
+var CW=['Read','the','long','report','and','then','list','the','key','points','for','me'],CK=$('ck'),grps=[];
+for(var c3=0;c3<3;c3++){var gEl=document.createElement('div');gEl.className='grp';var h='<span><em class="cw">chunk </em>'+(c3+1)+'</span><div class="row">';
+  for(var j=0;j<4;j++)h+='<span class="t">'+CW[c3*4+j]+'</span>';gEl.innerHTML=h+'</div>';CK.appendChild(gEl);grps.push(gEl)}
+var MK=$('mk'),mk=[];
+for(var r=0;r<4;r++)for(var cc=0;cc<8;cc++){var e=document.createElement('span');e.className='c'+(cc===4?' gap':'');MK.appendChild(e);mk.push({el:e,r:r,c:cc,st:''})}
+function chunks(t){
+  var c=t<7200?Math.floor(t/2400):-1,loc=t-c*2400,row=c<0?-1:Math.floor((loc-350)/450);
+  var cc2=c<0?3:c;grps.forEach(function(gp,i){var cls='grp '+(i===c?'act':i===cc2-1?'cache':i<cc2?'gone':'wait');if(gp.className!==cls)gp.className=cls});
+  mk.forEach(function(m){
+    var ok=(m.c<4?(cc2>0&&m.c>m.r):(m.c-4)<=m.r),st='c'+(m.c===4?' gap':'');
+    if(ok)st+=c<0?' done':m.r===row?' lit':m.r<row?' done':' ok';
+    if(st!==m.st){m.el.className=st;m.st=st}
+  });
+  var ro=$('roK');
+  if(c<0)ro.innerHTML='pre-filled · <b>chunk 3</b> is the cache';
+  else ro.innerHTML='chunk '+(c+1)+' sees <b>itself</b>'+(c>0?' + <b>chunk '+c+'</b> (cache)':' <span class="k">(cache empty)</span>');
+}
+
+/* ---------- CARD 7: tiles ---------- */
+var tiles=document.querySelectorAll('.tile'),bigs=document.querySelectorAll('.tile .big');
+function counters(ms){bigs.forEach(function(b){var to=+b.dataset.to,dec=+(b.dataset.dec||0),p=E.out(clamp(ms/1300));
+  b.textContent=(b.dataset.pre||'')+(dec?(to*p).toFixed(dec):Math.round(to*p).toLocaleString('en-US'))+(b.dataset.suf||'')})}
+function tileHl(t){var k=Math.floor(t/2000)%4,f=t%2000;var h=E.io(seg(f,0,450))*(1-E.io(seg(f,1500,2000)));tiles.forEach(function(e,i){e.style.setProperty('--h',i===k?h.toFixed(3):0)})}
+
+/* ---------- clock ---------- */
+var clock=FIX!=null?FIX:0,speed=1,paused=RM||FIX!=null||CAPTURE,last=null,born=null;
+function draw(){var t=((clock%P)+P)%P;hero(t);mx(MF,t,99,$('roF'));mx(MS,t,Wsw,$('roS'));chart(t);layers(t);rolling(t);chunks(t);tileHl(t)}
+function measure(){measureHero();measureMx(MF);measureMx(MS);measureRb();draw()}
+function loop(now){
+  if(born==null)born=now;if(now-born<2000)counters(now-born-400);
+  if(!paused&&last!=null)clock+=(now-last)*speed;last=now;draw();requestAnimationFrame(loop)}
+var pb=$('play');
+function setPaused(v){paused=v;pb.querySelector('span').textContent=v?'Play':'Pause';pb.setAttribute('aria-pressed',v);
+  pb.querySelector('svg').innerHTML=v?'<path d="M3 1.5v11l9-5.5z" fill="currentColor"/>':'<rect x="2" y="1" width="3.5" height="12" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1.5" fill="currentColor"/>'}
+pb.addEventListener('click',function(){setPaused(!paused)});
+document.querySelectorAll('.sp-b').forEach(function(b){b.addEventListener('click',function(){speed=+b.dataset.sp;
+  document.querySelectorAll('.sp-b').forEach(function(x){x.setAttribute('aria-pressed',x===b)})})});
+if(RM&&FIX==null)clock=4300;
+setPaused(paused);
+addEventListener('resize',measure);
+(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){measure();
+  if(CAPTURE){counters(1e4);window.__seek=function(ms){clock=ms;draw();return true};window.__ready=true}
+  else requestAnimationFrame(loop)});
+measure();
+})();
+</script>
+</body></html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Explainer Title</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!--
+  VISUAL EXPLAINER TEMPLATE (Play style). Copy this file, then replace the demo cards.
+  Modes (URL params, combinable):
+    (none)          long interactive page, 6-col bento, controls bar
+    ?poster=45      1024x1280 portrait poster   ?poster=sq   1200x1200 square
+    ?poster=wide    1600x900 landscape          ?poster=blog 1200x675 blog/OG figure
+    ?capture=1      freeze clock, no entrance anims/transitions, exposes window.__seek(ms), sets window.__ready
+    ?t=ms           freeze at a time (for debugging)
+  RULES: every animated thing is a pure function of the clock t (0..P). No CSS transitions/animations for
+  loop content (they break deterministic capture). CSS transitions only for hover/press UI.
+-->
+<style>
+:root{
+  --bg:#F7F7F7;--card:#FFFFFF;--ink:#3C3C3C;--mute:#777777;--line:#E5E5E5;
+  --g:#58CC02;--b:#1CB0F6;--y:#FFC800;--o:#FF9600;--r:#FF4B4B;--p:#CE82FF;
+  --onb:#FFFFFF;--ony:#3C3C3C;
+  --rad:22px;--cr:12px;--bt:2px;--bw:6px;--cb:4px;
+  --hbg:#58CC02;--hb:#58A700;--hi:#FFFFFF;
+  --mono:"DM Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.5 "DM Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+main{max-width:980px;margin:0 auto;padding:8px 14px 40px}
+@media(min-width:760px){main{padding:8px 24px 48px}}
+
+/* controls */
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;overflow-x:auto;padding:10px 0 12px;background:var(--bg)}
+.bar .sp{flex:1}.bar small{color:var(--mute);font-size:12px;white-space:nowrap}
+.btn{flex:none;font:inherit;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 14px;border-radius:999px;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);color:var(--ink);cursor:pointer;transition:transform .1s,border-bottom-width .1s}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+
+/* bento: 6 columns, spans s2/s3/s4, full by default; stacks under 760px */
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.card{grid-column:span 6;background:var(--card);border:var(--bt) solid var(--line);border-bottom-width:var(--bw);border-radius:var(--rad);padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden;min-width:0}
+@media(min-width:760px){.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}}
+.anim .card{animation:rise .55s cubic-bezier(.2,.9,.3,1.12) both;animation-delay:calc(var(--s,0)*60ms)}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.94)}}
+.hd{display:flex;align-items:center;gap:10px}
+.n{flex:none;width:32px;height:32px;border-radius:50%;background:var(--c);color:var(--on,var(--onb));display:grid;place-items:center;font-weight:800;box-shadow:0 3px 0 color-mix(in srgb,var(--c) 70%,#000)}
+h2{margin:0;font-size:20px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.viz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:150px;background:color-mix(in srgb,var(--c) 12%,var(--card));border-radius:16px;padding:16px 14px}
+.why{margin:0;color:var(--mute);font-size:14px;line-height:1.55}.why b{color:var(--ink);font-weight:700}
+.why.short{display:none}
+.chip{display:inline-block;padding:6px 12px;border-radius:var(--cr);background:var(--card);border:2px solid var(--line);border-bottom-width:var(--cb);font-weight:700;color:var(--ink);white-space:nowrap}
+.ro{font-size:13px;font-weight:700;text-align:center;min-height:20px}.ro .k{font-family:var(--mono);font-weight:500;color:var(--mute)}
+svg text{font-family:"DM Sans",system-ui,sans-serif}
+
+/* hero */
+.hero{background:var(--hbg);border-color:var(--hb);color:var(--hi);gap:14px;padding:22px}
+.hero h1{font-size:clamp(30px,6vw,46px);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
+.hero p{margin:0;font-size:17px;max-width:600px}
+.hero .chip{border-color:var(--hb)}
+.strip{display:flex;flex-wrap:wrap;gap:8px}
+
+/* DEMO 1: token strip with a sliding highlight */
+.tokrow{display:flex;gap:8px;flex-wrap:nowrap;position:relative;padding:4px}
+.tokrow .chip{will-change:transform}
+.frame{position:absolute;border:3px solid color-mix(in srgb,var(--c) 70%,#000);border-radius:16px;pointer-events:none}
+/* DEMO 2: bars */
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px}
+.bars i{width:22px;border-radius:8px 8px 4px 4px;background:var(--c);transform-origin:bottom;display:block}
+/* DEMO 3: svg */
+.fig{width:100%;max-width:420px;overflow:visible}
+
+.foot{text-align:center;color:var(--mute);font-size:13px;margin:22px 0 0}
+
+/* ---- poster modes (fixed canvas) ---- */
+.poster body{width:var(--pw);height:var(--ph);overflow:hidden}
+.poster main{width:var(--pw);max-width:none;height:var(--ph);padding:24px!important}
+.poster .bar,.poster .foot,.poster .why.long,.poster .web-only{display:none}
+/* poster type scale: canvas is shown ~2x smaller in feeds, so the floor is ~18px at 1200 wide (audit --feed 600 --min 9) */
+.poster body{font-size:18px}
+.poster .why.short{display:block;font-size:19px;line-height:1.35;color:var(--ink);font-weight:600}
+.poster .grid{height:100%;grid-auto-rows:auto}
+.poster .card h2{font-size:26px}
+.poster .n{width:38px;height:38px;font-size:19px}
+.poster .chip{font-size:18px}
+.poster .ro,.poster .ro .k{font-size:19px}
+.poster .hero h1{font-size:54px}
+.poster .hero p{font-size:20px;max-width:none}
+.pm-45{--pw:1024px;--ph:1280px}.pm-sq{--pw:1200px;--ph:1200px}.pm-wide{--pw:1600px;--ph:900px}.pm-blog{--pw:1200px;--ph:675px}
+/* poster grid: hero row + equal rows of 3 cards (edit per piece) */
+.poster .grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr}
+.poster .card{grid-column:span 1!important}
+.poster .hero{grid-column:1/-1!important}
+
+.capture .bar{display:none}
+.capture *,.capture *::before,.capture *::after{transition:none!important}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head>
+<body><main>
+
+<nav class="bar" aria-label="Animation controls">
+  <button class="btn" id="play" aria-pressed="false"><span>Pause</span></button>
+  <button class="btn sp-b" data-sp="0.5" aria-pressed="false">0.5×</button>
+  <button class="btn sp-b" data-sp="1" aria-pressed="true">1×</button>
+  <button class="btn sp-b" data-sp="2" aria-pressed="false">2×</button>
+  <span class="sp"></span><small>One loop drives every card</small>
+</nav>
+
+<div class="grid">
+<section class="card hero" style="--s:0">
+  <h1>Explainer title</h1>
+  <p>One or two sentences: what the idea is and why it matters. Put the real-scale numbers here.</p>
+  <div class="strip"><span class="chip">key fact</span><span class="chip">key fact</span><span class="chip">key fact</span></div>
+</section>
+
+<section class="card s3" style="--c:var(--b);--s:1"><div class="hd"><span class="n">1</span><h2>Sliding highlight</h2></div>
+  <div class="viz"><div class="tokrow" id="tok"><div class="frame" id="frame"></div></div><div class="ro" id="ro1"></div></div>
+  <p class="why long"><b>Why:</b> a stepped motion. It eases between positions, then holds so the eye can read.</p>
+  <p class="why short">Step, ease, hold.</p>
+</section>
+
+<section class="card s3" style="--c:var(--p);--s:2"><div class="hd"><span class="n">2</span><h2>Grow and settle</h2></div>
+  <div class="viz"><div class="bars" id="bars"></div><div class="ro" id="ro2"></div></div>
+  <p class="why long"><b>Why:</b> bars grow from the baseline with an overshoot, hold, then fade out before the loop restarts.</p>
+  <p class="why short">Grow, overshoot, hold, fade.</p>
+</section>
+
+<section class="card s3" style="--c:var(--o);--s:3"><div class="hd"><span class="n">3</span><h2>Draw a path</h2></div>
+  <div class="viz"><svg class="fig" id="fig" viewBox="0 0 300 140" role="img" aria-label="A curve draws itself from left to right"></svg></div>
+  <p class="why long"><b>Why:</b> SVG paths reveal with pathLength=1 plus dashoffset. A dot rides the tip.</p>
+  <p class="why short">Paths draw; a dot rides the tip.</p>
+</section>
+</div>
+<p class="foot">Footnote: toy sizes vs real-scale numbers, sources if the user wants them.</p>
+</main>
+
+<script>
+(function(){
+/* ===== engine (keep) ===== */
+var P=8000;                                   // loop length in ms; every sub-animation must divide/fit it
+var R=document.documentElement,Q=new URLSearchParams(location.search);
+var CAPTURE=Q.has('capture'),FIX=Q.has('t')?+Q.get('t'):null,PM=Q.get('poster');
+var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(PM){R.classList.add('poster','pm-'+PM)}
+if(CAPTURE)R.classList.add('capture');else if(!RM)R.classList.add('anim');
+var $=function(id){return document.getElementById(id)};
+var clamp=function(x,a,b){a=a==null?0:a;b=b==null?1:b;return x<a?a:x>b?b:x};
+var seg=function(t,a,b){return clamp((t-a)/(b-a))};       // 0..1 progress of t through [a,b]
+var lerp=function(a,b,f){return a+(b-a)*f};
+var bump=function(x){return Math.sin(Math.PI*clamp(x))};  // 0→1→0, for pops/pulses
+var E={io:function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},
+  out:function(x){return 1-Math.pow(1-x,3)},
+  back:function(x){var c=1.6;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)}};
+var NS='http://www.w3.org/2000/svg';
+function S(tag,at,par){var e=document.createElementNS(NS,tag);for(var k in at)e.setAttribute(k,at[k]);if(par)par.appendChild(e);return e}
+
+/* ===== DEMO 1: stepped slide with ease + hold ===== */
+var W=['The','cat','sat','on','it'],tok=$('tok'),fr=$('frame');
+var chips=W.map(function(w){var c=document.createElement('span');c.className='chip';c.textContent=w;tok.appendChild(c);return c}),L=[],Rt=[];
+function m1(){L=chips.map(function(c){return c.offsetLeft});Rt=chips.map(function(c,i){return L[i]+c.offsetWidth})}
+function at(arr,x){x=clamp(x,0,arr.length-1);var i=Math.floor(x),f=x-i;return i>=arr.length-1?arr[arr.length-1]:lerp(arr[i],arr[i+1],f)}
+function d1(t){
+  var n=W.length-1,pos,ga=1;
+  if(t<7000){var x=t/7000*n,i=Math.floor(x),f=x-i;pos=i+E.io(seg(f,0,.4))}   // move 40% of each step, hold 60%
+  else{pos=n;ga=1-E.io(seg(t,7200,7600))}                                       // fade out, then snap back hidden
+  if(t>=7600){pos=0;ga=E.io(seg(t,7600,7950))}                                   // fade in at start position
+  chips.forEach(function(c,j){var q=clamp(1-Math.abs(j-pos))*ga;
+    c.style.background=q>0?'color-mix(in srgb,var(--c) '+(q*100).toFixed(1)+'%,var(--card))':'';
+    c.style.color=q>.5?'#fff':'';c.style.transform='translateY('+(-4*q).toFixed(2)+'px)'});
+  var l=at(L,pos)-6,r=at(Rt,pos)+6;fr.style.left=l+'px';fr.style.width=(r-l)+'px';fr.style.top='-2px';fr.style.bottom='-2px';fr.style.opacity=ga;
+  $('ro1').innerHTML='focus: <b>'+W[Math.round(pos)]+'</b> <span class="k">step '+Math.round(pos)+'</span>';
+}
+
+/* ===== DEMO 2: staggered grow with overshoot ===== */
+var H=[.5,.9,.3,.75,.45,1,.6],bars=$('bars'),bi=H.map(function(){var i=document.createElement('i');bars.appendChild(i);return i});
+function d2(t){var out=1-E.io(seg(t,7200,7800));
+  bi.forEach(function(b,k){var p=E.back(seg(t,300+k*120,900+k*120));b.style.height=(H[k]*110)+'px';b.style.transform='scaleY('+Math.max(0,p*out).toFixed(3)+')'});
+  $('ro2').innerHTML='peak <b>'+Math.round(100*E.out(seg(t,300,1500))*out)+'%</b>';}
+
+/* ===== DEMO 3: path draw + riding dot ===== */
+var fig=$('fig'),d='';for(var x=0;x<=280;x+=4)d+=(x?'L':'M')+(10+x)+' '+(120-100*Math.pow(x/280,2)).toFixed(1)+' ';
+S('line',{x1:10,y1:122,x2:290,y2:122,stroke:'var(--line)','stroke-width':2.5,'stroke-linecap':'round'},fig);
+var path=S('path',{d:d,fill:'none',stroke:'var(--o)','stroke-width':4.5,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':'1 1'},fig);
+var dot=S('circle',{r:6,fill:'var(--o)',stroke:'#fff','stroke-width':2.5},fig);
+function d3(t){var p=E.io(seg(t,300,5800)),vis=Math.min(seg(t,0,300),1-seg(t,7400,7900));
+  path.setAttribute('stroke-dashoffset',(1-p).toFixed(4));var pt=path.getPointAtLength(path.getTotalLength()*p);
+  dot.setAttribute('cx',pt.x);dot.setAttribute('cy',pt.y);path.style.opacity=vis;dot.style.opacity=vis}
+
+/* ===== engine: draw / measure / loop (keep; register your draw + measure fns) ===== */
+var DRAW=[d1,d2,d3],MEASURE=[m1];
+var clock=FIX!=null?FIX:0,speed=1,paused=RM||FIX!=null||CAPTURE,last=null;
+function draw(){var t=((clock%P)+P)%P;DRAW.forEach(function(f){f(t)})}
+function measure(){MEASURE.forEach(function(f){f()});draw()}
+function loop(now){if(!paused&&last!=null)clock+=(now-last)*speed;last=now;draw();requestAnimationFrame(loop)}
+var pb=$('play');function setPaused(v){paused=v;pb.querySelector('span').textContent=v?'Play':'Pause';pb.setAttribute('aria-pressed',v)}
+pb.addEventListener('click',function(){setPaused(!paused)});
+document.querySelectorAll('.sp-b').forEach(function(b){b.addEventListener('click',function(){speed=+b.dataset.sp;document.querySelectorAll('.sp-b').forEach(function(x){x.setAttribute('aria-pressed',x===b)})})});
+if(RM&&FIX==null)clock=P*.6;   // reduced motion: freeze on a representative frame
+setPaused(paused);addEventListener('resize',measure);
+(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){measure();
+  if(CAPTURE){window.__seek=function(ms){clock=ms;draw();return true};window.__ready=true}
+  else requestAnimationFrame(loop)});
+measure();
+})();
+</script>
+</body></html>
