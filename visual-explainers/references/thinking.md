@@ -118,7 +118,7 @@ A static title card with decorative chips wastes the most valuable pixels.
 TOPIC: …                         SOURCE: … (verified sections: …)
 ONE-SENTENCE IDEA: …
 ATTRIBUTION: concept-only | name the source
-OUTPUTS: poster 4:5 (+1:1?) | page | blog figure(s) | GIF/MP4
+OUTPUTS: poster at the user's size (default 1024×1280) | page | blog figure(s) | GIF/MP4
 TOY WORLD: sentence/items: … ; sizes: N=…, W=… ; reused in cards: …
 REAL NUMBERS (with qualifiers): … (arithmetic) / … (measured: where, conditions)
 

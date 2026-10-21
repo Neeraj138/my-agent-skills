@@ -137,7 +137,7 @@ svg text{font-family:"DM Sans",system-ui,sans-serif}
 .plg{display:none;gap:14px;justify-content:center;font-size:14px;font-weight:700;color:var(--mute)}
 .plg i{display:inline-block;width:15px;height:15px;border-radius:4px;vertical-align:-2px;margin-right:6px}
 @media(max-width:759px){.layers .ll{font-size:26px}}
-/* square poster for posting: ?poster=1 (1200 x 1200) */
+/* poster base rules (shared); size and 4:5 tuning live in .p45 */
 .poster body{width:1200px;height:1200px;overflow:hidden}
 .poster main{width:1200px;max-width:none;height:1200px;padding:26px!important}
 .poster .bar,.poster .foot,.poster .c7,.poster .legend,.poster .ctl,.poster .why.long{display:none}
@@ -346,7 +346,7 @@ var P=8000,R=document.documentElement,Q=new URLSearchParams(location.search);
 var CAPTURE=Q.has('capture'),FIX=Q.has('t')?+Q.get('t'):null;
 var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(Q.has('poster'))R.classList.add('poster');
-if(Q.get('poster')==='45')R.classList.add('p45');
+if(Q.has('poster'))R.classList.add('p45');   // only size: 1024x1280
 if(CAPTURE)R.classList.add('capture');else if(!RM)R.classList.add('anim');
 var $=function(id){return document.getElementById(id)};
 var clamp=function(x,a,b){a=a==null?0:a;b=b==null?1:b;return x<a?a:x>b?b:x};

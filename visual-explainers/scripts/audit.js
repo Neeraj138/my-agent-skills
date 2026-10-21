@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Automated quality gate. Run BEFORE the critic; fix every FAIL.
 // node audit.js --file page.html [--query poster=45] --w 1024 --h 1280 [--feed 600] [--min 9] [--dur 8000] [--full] [--font "DM Sans"]
-//  --feed  width (px) the output is displayed at (feed preview ~600; blog column ~720; omit for 1:1 web page)
+//  --feed  width (px) the output is displayed at (feed preview ~600; blog column ~720; omit for a web page shown at native size)
 //  --min   minimum readable text size in px AT THAT display width (default 8)
 //  --all   list every small-text offender, not just the first 10
 const { execSync } = require('child_process');

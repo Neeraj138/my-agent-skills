@@ -2,10 +2,11 @@
 
 ## Output sizes
 
+**Render only the size(s) the user asks for.** This table is a menu, not a checklist.
+
 | Target | Canvas (CSS px) | Mode | Notes |
 |---|---|---|---|
-| X / LinkedIn feed (default) | **1024×1280** (4:5) | `?poster=45` | Tallest portrait both feeds show uncropped. Main deliverable. |
-| X / LinkedIn alt | 1200×1200 (1:1) | `?poster=sq` | Safe everywhere; less room per card. |
+| X / LinkedIn feed (default when no size is given) | **1024×1280** (4:5) | `?poster=45` | Tallest portrait both feeds show uncropped. Main deliverable. |
 | Landscape post / slide | 1600×900 (16:9) | `?poster=wide` | Good for 4–6 cards in two rows of three. |
 | Blog hero / OG image | 1200×675 (16:9) or 1200×630 | `?poster=blog` | Hero plus 3 cards at most. |
 | Inline blog figure | 720–960 wide, auto height | plain page, `--full` capture | One or two cards; one idea. |
@@ -29,7 +30,6 @@ Feeds show posters at about **500–600px** wide. Audit with `--feed 600 --min 9
 Posters are a fixed canvas: `.poster body{width:var(--pw);height:var(--ph);overflow:hidden}`. The audit fails the poster if it scrolls.
 
 - **4:5 (1024×1280).** Hero across the top, about 300px tall, then **two rows of three cards**, each about 420px tall. A two-column grid of three rows was too short for matrix-style visuals in testing.
-- **1:1 (1200×1200).** Hero about 290px, then two rows of three.
 - **16:9 (1600×900).** Hero on the left, spanning two rows, with a 2×2 grid of cards to its right. Or a short hero band with a row of four cards below it.
 
 ## Density budget per poster card (about 330×420 at 1024 wide)
@@ -49,7 +49,7 @@ Posters are a fixed canvas: `.poster body{width:var(--pw);height:var(--ph);overf
 
 - **Live miniature.** The hero contains a tiny version of the mechanism, such as a window sliding over a sentence with arcs to the attended tokens. This is the most important frame for scroll-stopping.
 - **Text block.** H1 plus one or two sentences that carry the real-scale numbers and qualifiers.
-- **Stat chips.** 3–4 short chips. On a 4:5 poster, place them in a row under the paragraph. On 1:1, use a 2×2 grid to the right of the title.
+- **Stat chips.** 3–4 short chips. On a 4:5 poster, place them in a row under the paragraph.
 - Avoid dead bands. Reserve headroom above the strip only if the arcs that need it are visible on most frames.
 
 ## Long page extras

@@ -33,7 +33,7 @@ Settle these before building. Ask only about what you can't infer.
   - blog figure
   - one standalone animated diagram
 
-  Platform sizes are in `references/layouts.md`. When the user says "for X/LinkedIn", default to **1024×1280 (4:5)** and also make a 1200×1200 alternate. A long page gets crushed in feeds, so never post it as the main image.
+  Platform sizes are in `references/layouts.md`. **Render only the dimensions the user gives.** Never add extra alternate sizes. If they say "for X/LinkedIn" without a size, use **1024×1280 (4:5)**. A long page gets crushed in feeds, so never post it as the main image.
 - **Style.** Use `styles/play.md` unless the user names another style that exists in `styles/`.
 - **Attribution.** Should the source (paper, product, author) be named, or should the piece be about the concept only? Users often want the concept only, with the paper used just for numbers. If unclear, default to concept-only and put real-scale numbers in the text.
 
@@ -123,9 +123,10 @@ Stop after round 2 unless a blocker remains.
 
 ```bash
 bash $S/render.sh page.html <out>/name-portrait-1024x1280 1024 1280 poster=45 6800
-bash $S/render.sh page.html <out>/name-square-1200 1200 1200 poster=sq 6800
-bash $S/render.sh page.html <out>/name-longform 1000 900 "" 6800 8000 1
+bash $S/render.sh page.html <out>/name-longform 1000 900 "" 6800 8000 1   # only if the user wants the long page as a GIF or PNG
 ```
+
+Render only the sizes the user asked for. For a size other than 4:5, add a `.pm-<name>{--pw;--ph}` rule and a poster grid for it.
 
 Each call produces an `.mp4` (H.264, bt709, CRF 12), a `.gif` (15 fps) and a `.png` (a 2× still). Pick the still time at a "complete" moment: everything landed, arcs visible, final chips lit.
 
