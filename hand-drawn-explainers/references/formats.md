@@ -10,7 +10,7 @@ Everything is rendered from a scene in `scenes/<name>.js` by `render.mjs` (headl
 node render.mjs <name> --still 3,8.5 [--safe] [--out out/<name>_{t}.png]     # one PNG per time, full size
 node render.mjs <name> --sheet 2,4,6,8,10 [--cols 5] [--safe] --out out/<name>_sheet.png   # tiled contact sheet (≈480 px tiles)
 ```
-`--safe` paints the reel UI zones red (vertical scenes only). `--param k=v` passes URL params to the scene.
+`--safe` paints the reel UI zones red (vertical scenes only). `--cover` shades what Instagram's 4:5 feed crop cuts and dashes the 3:4 profile-grid crop. `--param k=v` passes URL params to the scene.
 
 ## Video (MP4, 60 fps)
 ```bash
@@ -19,7 +19,14 @@ node render.mjs <name> --from 30 --to 45 --out out/<name>_part.mp4   # a section
 ```
 - The aspect ratio comes from the scene: `width: 1080, height: 1920` (9:16 reel), `1920×1080` (16:9), `1080×1080` (1:1).
 - Check the result: `ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate,width,height -of csv=p=0 out/<name>.mp4` should give `60/1`.
-- Cover image: `node render.mjs <name> --still <best settled time> --out out/<name>_cover.png`.
+- Cover image (reels): a designed `scenes/<name>-cover.js` (see `reels-attention.md`).
+  ```bash
+  node render.mjs <name>-cover --still 1 --cover --out out/<name>_cover_check.png   # check the crop
+  node render.mjs <name>-cover --still 1 --out out/<name>_cover.png                 # deliverable
+  magick out/<name>_cover.png -resize 270x out/<name>_cover_small.png               # thumbnail-size check
+  node render.mjs <name> --still 0,0.5 --safe --out out/<name>_open_{t}.png         # frame 0 must already show the hook
+  ```
+  For 16:9, a cover still is just the best settled frame: `--still <t> --out out/<name>_cover.png`.
 
 ## GIF
 GIF frame delays are counted in 1/100 s, and browsers slow down anything faster than ~50 fps, so **GIFs are made at 30 fps** (or 25). For a true 60 fps loop, deliver a muted looping MP4 or WebP instead.

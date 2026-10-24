@@ -11,6 +11,7 @@ The script is written for the audience and depth the user chose in the brief. Th
 | **a derivation / proof** | the claim → build each term from a picture → the result appears as a consequence → check it on one concrete case |
 
 ## Hook (first 2–4 s)
+For reels, the hook and the cover are designed together. Read `reels-attention.md` first.
 Open on something the viewer has seen, done or asked at their level. A newcomer: "A splinter goes in. An hour later the skin is red, hot and swollen. Why?" A specialist: "Every neutrophil in that abscess was in the bloodstream yesterday. How did it get out?" Don't open with a definition, "Ever wondered…", or a fragment pair like "One cell. One mission."
 
 ## Analogies

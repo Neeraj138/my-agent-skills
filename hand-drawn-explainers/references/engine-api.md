@@ -74,7 +74,7 @@ Needs `out/voice/my_vo.js` in `requires` (written by `tools/voice.mjs tts` or `t
 ## 9. Rendering
 - Preview: open `player.html?scene=<name>` (file:// works; audio plays in sync).
 - Stills: `node render.mjs <name> --still 3,8.5 [--safe] [--out dir/name_{t}.png] [--param k=v]` (`{t}` → the time; folders are created; `--safe` overlay is for vertical scenes).
-- Contact sheet: `node render.mjs <name> --sheet 2,4,6,... [--cols 6] [--safe] --out out/<name>_sheet.png`.
+- Contact sheet: `node render.mjs <name> --sheet 2,4,6,... [--cols 6] [--safe] --out out/<name>_sheet.png`. `--cover` overlays Instagram's cover crops (4:5 feed, 3:4 grid).
 - Video: `node render.mjs <name>` → `out/<name>.mp4` (60 fps default, H.264 + AAC, loudness −15 LUFS target). `--from/--to` for a section, `--audio file` overrides. GIF/slides/PDF: `formats.md`.
 
 ## 10. Gotchas

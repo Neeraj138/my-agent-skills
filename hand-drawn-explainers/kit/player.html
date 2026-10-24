@@ -54,8 +54,17 @@
     window.SCENE = scene;
     // ?safe overlays the areas Instagram/TikTok UI covers on vertical video
     const safe = qs.has('safe') && scene.H > scene.W;
+    // ?cover shows how a vertical cover gets cropped: shaded = outside the 4:5 feed crop, dashed = 3:4 profile-grid crop
+    const cover = qs.has('cover') && scene.H > scene.W;
     window.renderAt = (t) => {
       scene.render(ctx, t);
+      if (cover) {
+        const h45 = scene.W * 5 / 4, h34 = scene.W * 4 / 3, y45 = (scene.H - h45) / 2, y34 = (scene.H - h34) / 2;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.45; ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, scene.W, y45); ctx.fillRect(0, y45 + h45, scene.W, scene.H - y45 - h45);
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ff0040'; ctx.lineWidth = 4; ctx.setLineDash([18, 12]);
+        ctx.strokeRect(2, y34, scene.W - 4, h34); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      }
       if (!safe) return;
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.25; ctx.fillStyle = '#ff0040';
       ctx.fillRect(0, 0, scene.W, 220);                    // top bar

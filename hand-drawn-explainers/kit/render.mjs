@@ -17,7 +17,7 @@ const still = opt('still', null);
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 page.on('pageerror', (e) => console.error('page error:', e.message));
-await page.goto(pathToFileURL(path.join(here, 'player.html')).href + `?scene=${name}&headless=1${args.includes('--safe') ? '&safe' : ''}${args.map((x, i) => x === '--param' ? '&' + args[i + 1] : '').join('')}`);
+await page.goto(pathToFileURL(path.join(here, 'player.html')).href + `?scene=${name}&headless=1${args.includes('--safe') ? '&safe' : ''}${args.includes('--cover') ? '&cover' : ''}${args.map((x, i) => x === '--param' ? '&' + args[i + 1] : '').join('')}`);
 await page.waitForFunction(() => window.READY === true, null, { timeout: 30000 });
 
 const grab = (t) => page.evaluate((t) => { renderAt(t); return document.getElementById('c').toDataURL('image/png'); }, t)

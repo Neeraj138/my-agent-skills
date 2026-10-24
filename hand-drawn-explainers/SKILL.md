@@ -32,6 +32,7 @@ Ask these in one short message, offer a recommended default for each, and wait f
 |---|---|---|
 | **Who is it for, and how deep?** | sets vocabulary, analogies, which terms appear on screen | complete newcomer · curious non-specialist · student of the field · practitioner / specialist |
 | **Output(s)** | changes layout and pacing | 9:16 reel/short · 16:9 video · 1:1 · GIF loop · slide deck (PDF/PNG) · single poster/sheet |
+| **For a reel: platform, series style, hook/cover idea** | the cover and first 3 s decide whether anyone watches | Instagram · TikTok · YouTube Shorts · existing series look |
 | **Length** | | reel 20–90 s · lesson 2–8 min · slides: number of slides |
 | **Voice** | | ElevenLabs (needs their API key) · local offline voice (free, decent) · captions only · silent |
 | **Subtitles?** | default is **none**; ask, don't assume | none (default) · burned-in word-synced · separate `.srt` file |
@@ -45,13 +46,13 @@ Write the answers at the top of `scripts/<topic>.md`. Every later choice is chec
 ## 2. Workflow
 
 1. **Understand the topic** from the sources the user named or standard references. Write 5–15 fact notes under the beat table in `scripts/<topic>.md`. They stay off screen.
-2. **Script**: a beat table `| # | voiceover / caption | picture | on-screen text |`. Read `references/script-craft.md`. For slides or a poster, the "voiceover" column holds speaker notes or the one sentence the slide must make obvious.
+2. **Script**: for a reel, design the **cover and the first 3 seconds first** (`references/reels-attention.md`), then write the rest. A beat table `| # | voiceover / caption | picture | on-screen text |`. Read `references/script-craft.md`. For slides or a poster, the "voiceover" column holds speaker notes or the one sentence the slide must make obvious.
 3. **Script review** with fresh eyes (§5). Fix, then lock the script.
 4. **Voice** (if voiced). ElevenLabs: `node tools/voice.mjs tts <voiceId> out/voice/<id>.txt out/voice/<id> 0.92`. Local: `research/.venv/bin/python tools/voice_local.py out/voice/<id>.txt out/voice/<id> --voice af_heart --speed 0.9`. Then check clarity with `research/.venv/bin/python tools/asr_check.py <plain.txt> out/voice/<id>.mp3`.
 5. **Build** `scenes/<name>.js` (subtitles are off unless the user asked: then `s.useVoice(id, { subtitles: true })` + `s.scrim()`) from `templates/` (`reel.js` voiced 9:16, `reel-captions.js` captions-only, `landscape.js` 16:9 / slides). Add the name to `scenes/index.js`. API: `references/engine-api.md`. Icons: `references/packs.md`. Visual rules: `references/visual-quality.md`.
 6. **Check stills** at every beat: `node render.mjs <name> --sheet t1,t2,… --safe --out out/<name>_sheet.png`. Open the sheet and look at it, then run the frame checklist in `references/visual-quality.md`. **Phone test:** each tile is about 480 px wide. If a label can't be read in the tile, it's too small. Open single frames at full size (`--still t`) for anything dense. Fix and repeat until the checklist is clean.
 7. **Render review** with fresh eyes (§5), using a sheet every ~2 s plus the script. Fix, then re-check.
-8. **Export** the formats the user asked for (`references/formats.md`): MP4 at 60 fps, GIF, slides PDF, poster PNG, cover still.
+8. **Export** the formats the user asked for (`references/formats.md`): MP4 at 60 fps, GIF, slides PDF, poster PNG. Reels also get a designed cover image (`scenes/<name>-cover.js`, checked with `--cover` and at 270 px wide).
 9. **Deliver**: give the file paths and one line on what to look at. Mention anything you could not do.
 
 ## 3. What good looks like (short version; full rules and numbers in `references/visual-quality.md`)
@@ -61,13 +62,13 @@ Write the answers at the top of `scripts/<topic>.md`. Every later choice is chec
 - **One operation owns the frame.** What just happened stays (dimmed) only while it's still needed, then it goes fully. No ghosts at 5 % opacity.
 - **Things transform; they don't get re-drawn.** Carry the same object (a cell, a token, a packet) from step to step so the viewer tracks identity and the flow has no abrupt cuts.
 - **Specific, not generic.** Draw the thing itself with its meaningful internal parts (a neutrophil with a lobed nucleus and granules; a GPU with memory, compute and a bus). Don't use a labelled grey box.
-- **Text is a garnish.** The voice (and subtitles, if the user wants them) carries the words. Per beat, use at most one short on-screen label (≤ 6 words, ≥ 38 px on a 1080-wide frame). Without subtitles, labels must carry the key terms a viewer needs to see spelled; never repeat the spoken sentence as on-screen text. Technical terms appear only if the chosen depth needs them, and each appears once when it's introduced. No footers, citations, equations nobody explains, or slide titles on every frame.
+- **Text is a garnish.** The voice (and subtitles, if the user wants them) carries the words. Per beat, use at most one short on-screen label (≤ 6 words, ≥ 38 px on a 1080-wide frame). Without subtitles, labels must carry the key terms a viewer needs to see spelled; never repeat the spoken sentence as on-screen text. Technical terms appear only if the chosen depth needs them, and each appears once when it's introduced. No footers, citations, equations nobody explains, or slide titles on every frame. The exception is a reel's hook text in the first ~3 s, for muted viewers.
 - **Colour = meaning.** Assign each colour one role for the whole piece and never reuse it for something else.
 - **Calm, continuous motion.** Something changes every 0.5–2 s, nothing sits dead for more than 3 s, and five things never animate at once.
 
 ## 4. Formats in one line each (details and commands: `references/formats.md`)
 
-- **9:16 reel**: 1080×1920. Keep content inside the Instagram/TikTok safe zone (`s.safe`, red in `--safe` stills).
+- **9:16 reel**: 1080×1920. Keep content inside the Instagram/TikTok safe zone (`s.safe`, red in `--safe` stills). Attention matters most here: a cover that works as a thumbnail, a frame 0 that already shows the hook, the voice starting by ~0.3 s, and on-screen hook text for muted viewers. All of it is in `references/reels-attention.md`, which is required reading for any reel.
 - **16:9 video**: 1920×1080. Subtitles sit at the bottom. Diagrams live in y 60–910.
 - **GIF**: render the MP4, then convert with the palette command. GIFs can't really do 60 fps, so use 30 fps there, or deliver a looping MP4/WebP at 60.
 - **Slides**: one scene, one beat per slide. Export the settled frame of each beat as PNG, then bundle into a PDF (or PPTX).
@@ -78,7 +79,7 @@ Write the answers at the top of `scripts/<topic>.md`. Every later choice is chec
 The reviewer must not have seen your reasoning. If your environment can spawn a sub-agent, do that and give it only the brief, the script and the images. If it can't, start a separate session, or write the review as a separate pass in which you role-play each persona and answer every question in writing.
 
 Prompt (adapt it to the chosen audience):
-> You are reviewing an explainer for **<audience and depth from the brief>**. Judge it as (1) that viewer: where do you get lost, is any term or symbol used before it is shown, does each step follow visibly from the last? (2) a subject expert: is anything wrong or misleading at this depth? (3) a creative director: is the focal action big and obvious in every frame, is there variety of shot size, is anything empty, cluttered, overlapping, off-centre, too small to read on a phone, or a leftover from an earlier beat? (4) an AI-slop detector (`references/visual-quality.md` → slop list). List concrete problems with timestamps, worst first, and say how to fix each one.
+> You are reviewing an explainer for **<audience and depth from the brief>**. Judge it as (1) that viewer: where do you get lost, is any term or symbol used before it is shown, does each step follow visibly from the last? (2) a subject expert: is anything wrong or misleading at this depth? (3) a creative director: is the focal action big and obvious in every frame, is there variety of shot size, is anything empty, cluttered, overlapping, off-centre, too small to read on a phone, or a leftover from an earlier beat? (4) an AI-slop detector (`references/visual-quality.md` → slop list); (5) for reels, a scroller: would you tap this cover in a grid of others, and would you still be watching at second 3? Say why not. List concrete problems with timestamps, worst first, and say how to fix each one.
 
 Apply the fixes you agree with, re-render, and look again. One round is the minimum. Do another if the first one found structural problems.
 
