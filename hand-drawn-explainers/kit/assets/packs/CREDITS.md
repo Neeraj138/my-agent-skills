@@ -1,0 +1,44 @@
+# Credits — Excalidraw libraries (MIT, github.com/excalidraw/excalidraw-libraries)
+
+- **Clocks** (`aleksandr-hovhannisyan-clocks`) by Aleksandr Hovhannisyan
+- **Architecture diagram components** (`anna-pastushko-architecture-diagram-components`) by Anna Pastushko
+- **Emojis** (`anumithaapollo12-emojis`) by Anumitha Apollo
+- **Systems Design Components** (`arach-systems-design-components`) by Arach Tchoupani
+- **Artem's icons** (`artem-anufrij-live-de-artem-s-icons`) by Artem Anufrij
+- **code-essentials** (`cengizhanparlak-code-essentials`) by jenkiskhan
+- **Data Viz** (`dbssticky-data-viz`) by dbs-sticky
+- **Common Home Network Basics** (`dday987-common-home-network-basics`) by DDay987
+- **Stick people** (`dhtoran-stick-people`) by David Hurt
+- **Clouds** (`dimitrios-fkliaras-clouds`) by Dimitrios Fkliaras
+- **Software Logos** (`drwnio-drwnio`) by drwnio.polyrand.net
+- **Storytelling** (`drwnio-storytelling`) by drwnio.polyrand.net
+- **Network topology icons** (`dwelle-network-topology-icons`) by dwelle
+- **Computers** (`ei-au-computers`) by EI d'AU
+- **Awesome Icons** (`ferminrp-awesome-icons`) by ferminrp
+- **Flow Chart Symbols** (`finfin-flow-chart-symbols`) by Fin
+- **Charts** (`g-script-charts`) by NicolasGoudry@G.Script
+- **Stick Figures Collaboration** (`gianpaima-stick-figures-collaboration`) by freepik, dwelle
+- **AWS Simple Icons** (`husainkhambaty-aws-simple-icons`) by husainkhambaty
+- **Algorithms and Data Structures (Arrays, Matrices, Trees ...)** (`intradeus-algorithms-and-data-structures-arrays-matrices-trees`) by intradeus
+- **Graphs** (`jakubpawlina-graphs`) by Jakub Pawlina
+- **Robots** (`kaligule-robots`) by Kaligule
+- **Data sources** (`kvchitrapu-data-sources`) by Kishore
+- **some-handdrawn-signs** (`kwirke-some-handdrawn-signs`) by Marc
+- **Stars** (`lipis-stars`) by Lipis
+- **Office Items** (`m47812-office-items`) by Robin Müller
+- **IT icons** (`mateuszbaransanok-it-icons`) by Mateusz Baran
+- **Thicc arrow** (`monty-an-adjustable-arrow-shape-that-can-be-modified-in-a-number-of-ways-to-suit-different-use-cases`) by Monty
+- **Gadgets** (`morgemoensch-gadgets`) by MorgeMoensch
+- **System Design Icons** (`niknm-systemdesignicons`) by niknm
+- **Basic shapes** (`pgilfernandez-basic-shapes`) by Pablo Gil Fernández
+- **Character Kit 1** (`pixelass-character-kit-1`) by Gregor Adams
+- **Basic system design** (`pratheeshpm-basic-system-design`) by pratheeshpm
+- **Computer parts** (`rochacbruno-computer-parts`) by Bruno Rocha
+- **System Design Components** (`rohanp-system-design`) by Rohan Pithadiya
+- **Network elements** (`samu-x86-network-elements`) by samu_x86
+- **AWS Serverless Icons** (`slobodan-aws-serverless`) by Slobodan Stojanović
+- **AWS Serverless Icons v2** (`stojanovic-aws-serverless-icons-v2`) by slobodan
+- **Icons** (`xxxdeveloper-icons`) by xxxDeveloper
+- **System Icons** (`xxxdeveloper-system-icons`) by xxxDeveloper
+- **Software Architecture** (`youritjang-software-architecture`) by Youri Tjang
+- **Stick Figures** (`youritjang-stick-figures`) by Youri Tjang

@@ -1,0 +1,8 @@
+{
+  "name": "hand-drawn-explainers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": { "render": "node render.mjs" },
+  "dependencies": { "playwright": "1.59", "roughjs": "^4.6.6" }
+}

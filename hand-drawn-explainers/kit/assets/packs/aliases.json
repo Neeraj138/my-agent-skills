@@ -1,0 +1,11 @@
+{
+  "drwnio-storytelling": { "item-1": "gloomy", "item-2": "idea", "item-3": "annoyed", "item-4": "happy-music", "item-5": "stressed", "item-6": "crying", "item-7": "furious", "item-8": "in-love", "item-9": "raging", "item-10": "dizzy", "item-11": "sleepy", "item-12": "speechless", "item-13": "thinking", "item-14": "mind-blown", "item-15": "confused", "item-16": "embarrassed" },
+  "kaligule-robots": { "item-1": "robot-happy", "item-2": "robot-cheering", "item-3": "robot-hands-on-hips", "item-4": "robot-shocked", "item-5": "robot-worried", "item-6": "robot-angry", "item-7": "robot-broken" },
+  "drwnio-drwnio": { "item-1": "archive", "item-2": "database", "item-3": "blocks", "item-5": "kubernetes", "item-6": "redis", "item-7": "nginx", "item-8": "rabbitmq", "item-9": "chip", "item-10": "vault", "item-11": "load-balancer", "item-12": "code", "item-13": "postgres", "item-14": "github", "item-15": "server-rack", "item-16": "python", "item-17": "browser" },
+  "slobodan-aws-serverless": { "item-1": "lambda", "item-2": "appsync", "item-3": "api-gateway", "item-5": "dynamodb", "item-6": "cognito", "item-7": "s3", "item-8": "kinesis", "item-9": "sns", "item-10": "sqs", "item-11": "ses", "item-13": "cloudwatch", "item-14": "step-functions", "item-15": "amplify" },
+  "rohanp-system-design": { "item-1": "box", "item-6": "storage" },
+  "dwelle-network-topology-icons": { "item-1": "rack-server", "item-2": "desktop", "item-3": "laptop", "item-4": "tower" },
+  "morgemoensch-gadgets": { "item-1": "smartphone", "item-2": "mp3-player", "item-4": "tablet", "item-5": "laptop" },
+  "g-script-charts": { "item-1": "bar-chart", "item-2": "column-chart", "item-3": "line-chart", "item-4": "pie-chart" },
+  "dimitrios-fkliaras-clouds": { "item-1": "cloud-1", "item-2": "cloud-2", "item-3": "cloud-3", "item-4": "cloud-4" }
+}

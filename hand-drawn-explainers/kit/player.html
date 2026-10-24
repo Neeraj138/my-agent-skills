@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>sketchanim player</title>
+<style>
+  @font-face { font-family: 'Virgil'; src: url('vendor/fonts/Virgil.woff2') format('woff2'); }
+  html, body { margin: 0; background: #0b0b0b; color: #ccc; font: 13px system-ui, sans-serif; height: 100%; }
+  body { display: flex; flex-direction: column; }
+  #wrap { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  canvas { max-width: 100%; max-height: 100%; background: #121212; }
+  #bar { display: flex; gap: 10px; align-items: center; padding: 8px 12px; background: #161616; }
+  #bar input[type=range] { flex: 1; }
+  button, select { background: #222; color: #ddd; border: 1px solid #333; border-radius: 6px; padding: 4px 10px; }
+  body.headless #bar { display: none; }
+  body.headless canvas { max-width: none; max-height: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" width="1920" height="1080"></canvas></div>
+<div id="bar">
+  <select id="sel"></select>
+  <button id="play">⏸</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0">
+  <span id="time">0.00s</span>
+</div>
+<script src="vendor/rough.js"></script>
+<script src="engine/sketchanim.js"></script>
+<script src="scenes/index.js"></script>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const name = qs.get('scene') || SCENE_LIST[0];
+  const headless = qs.has('headless');
+  if (headless) document.body.classList.add('headless');
+  const sel = document.getElementById('sel');
+  for (const n of SCENE_LIST) sel.add(new Option(n, n, false, n === name));
+  sel.onchange = () => { location.search = '?scene=' + sel.value; };
+
+  const s = document.createElement('script');
+  s.src = 'scenes/' + name + '.js';
+  const load = (src) => new Promise((ok, err) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => err(new Error('missing ' + src)); document.body.appendChild(e); });
+  s.onload = async () => {
+    // scenes may declare data files (e.g. voiceover timings) in opts.requires
+    SA.params = Object.fromEntries(qs);
+    let req = SA.scenes[name].opts.requires || [];
+    if (typeof req === 'function') req = req(SA.params);
+    for (const r of req) await load(r);
+    await document.fonts.load('32px Virgil');
+    await document.fonts.ready;
+    const scene = SA.build(name);
+    const cv = document.getElementById('c');
+    cv.width = scene.W; cv.height = scene.H; cv.style.aspectRatio = scene.W + '/' + scene.H;
+    const ctx = cv.getContext('2d');
+    window.SCENE = scene;
+    // ?safe overlays the areas Instagram/TikTok UI covers on vertical video
+    const safe = qs.has('safe') && scene.H > scene.W;
+    window.renderAt = (t) => {
+      scene.render(ctx, t);
+      if (!safe) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.25; ctx.fillStyle = '#ff0040';
+      ctx.fillRect(0, 0, scene.W, 220);                    // top bar
+      ctx.fillRect(0, scene.H - 380, scene.W, 380);        // username / caption / audio
+      ctx.fillRect(scene.W - 140, 1000, 140, scene.H - 1380); // like/comment/share buttons
+      ctx.globalAlpha = 1;
+    };
+    window.READY = true;
+    if (headless) return;
+
+    let t = +(qs.get('t') || 0), playing = !qs.has('t'), last = performance.now();
+    const scrub = document.getElementById('scrub'), time = document.getElementById('time'), play = document.getElementById('play');
+    // voiceover preview (opts.audio = path, opts.audioOffset = seconds)
+    const au = scene.opts.audio ? new Audio(scene.opts.audio) : null;
+    const syncAudio = () => { if (!au) return; const at = t - (scene.opts.audioOffset || 0); if (playing && at >= 0) { if (Math.abs(au.currentTime - at) > 0.15) au.currentTime = at; if (au.paused) au.play().catch(() => {}); } else au.pause(); };
+    play.onclick = () => { playing = !playing; play.textContent = playing ? '⏸' : '▶'; last = performance.now(); syncAudio(); };
+    play.textContent = playing ? '⏸' : '▶';
+    scrub.oninput = () => { t = (scrub.value / 1000) * scene.duration; };
+    addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); play.onclick(); }
+      if (e.code === 'ArrowRight') t = Math.min(scene.duration, t + 1 / 60);
+      if (e.code === 'ArrowLeft') t = Math.max(0, t - 1 / 60);
+    });
+    (function loop(now) {
+      if (playing) { t += (now - last) / 1000; if (t > scene.duration) t = 0; syncAudio(); }
+      last = now;
+      renderAt(t);
+      scrub.value = (t / scene.duration) * 1000;
+      time.textContent = t.toFixed(2) + 's / ' + scene.duration + 's';
+      requestAnimationFrame(loop);
+    })(last);
+  };
+  document.body.appendChild(s);
+</script>
+</body>
+</html>
