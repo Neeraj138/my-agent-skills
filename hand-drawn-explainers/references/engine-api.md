@@ -29,7 +29,7 @@ A node is invisible before its first reveal key only if you give it one (`drawIn
 | `ellipse` | x, y (centre), rx, ry | |
 | `line` / `arrow` | points [[x,y]...] | rough polyline; arrow adds a head |
 | `curve` | from, to, c1?, c2?, dash, width, flow | smooth bezier, dashed connectors; `flow: 30` animates dashes |
-| `text` | text, x, y, size, color, align, reveal ('write'/'type'/'fade'), hl, bg | `*word*` = highlighted in `hl`; `\n` lines; `bg` = backing pill |
+| `text` | text, x, y, size, color, align, reveal ('write'/'type'/'fade'), hl, bg, maxW | `*word*` = highlighted in `hl`; `\n` forces a line break; `maxW` wraps into even lines no wider than that (captions default to frame width − 120; use 800 on reels to stay in the safe zone); `bg` = backing pill |
 | `counter` | value, prefix, suffix, decimals | rolls with `to(t, d, {value})`; wrap in `s.hud(...)` to pin it to the screen (y≈520), reveal with `fadeIn` |
 | `dot` | r, color, ring | data point |
 | `sparkle` | size, color | ✦ twinkle — use sparingly, one per payoff |

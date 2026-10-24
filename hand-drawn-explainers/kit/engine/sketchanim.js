@@ -354,9 +354,31 @@
   }
   const plain = (txt) => String(txt).replace(/\*/g, '');
   class Text extends Node {
-    defaults() { return { text: '', size: 32, color: SA.C.white, hl: null, align: 'left', reveal: 'write', font: SA.FONT, weight: '', lineHeight: 1.22 }; }
+    defaults() { return { text: '', size: 32, color: SA.C.white, hl: null, align: 'left', reveal: 'write', font: SA.FONT, weight: '', lineHeight: 1.22, maxW: null }; }
     font(t) { return `${this.props.weight} ${this.get('size', t)}px ${this.props.font}, cursive`.trim(); }
-    width(ctx, t) { ctx.font = this.font(t); return Math.max(...plain(this.get('text', t)).split('\n').map((l) => ctx.measureText(l).width)); }
+    // text with line breaks added so no line is wider than maxW (px); *highlights* stay intact across breaks
+    lines(t) {
+      const raw = String(this.get('text', t)), maxW = this.props.maxW;
+      if (!maxW) return raw;
+      const ctx = SA._mctx || (SA.measure('x'), SA._mctx); ctx.font = this.font(t);
+      const fits = (l) => ctx.measureText(plain(l)).width <= maxW;
+      return raw.split('\n').map((para) => {
+        if (fits(para)) return para;
+        const words = para.split(' ');
+        const wrap = (w) => { const out = []; let cur = '';
+          for (const x of words) { const next = cur ? cur + ' ' + x : x;
+            if (cur && ctx.measureText(plain(next)).width > w) { out.push(cur); cur = x; } else cur = next; }
+          if (cur) out.push(cur); return out; };
+        // fewest lines that fit maxW, then the narrowest width that keeps that many lines → even lines, no orphan word
+        let out = wrap(maxW), lo = 0, hi = maxW;
+        while (hi - lo > 4) { const mid = (lo + hi) / 2; if (wrap(mid).length <= out.length) hi = mid; else lo = mid; }
+        out = wrap(hi);
+        // a highlight split across lines: close it at the line end, reopen on the next line
+        for (let i = 0; i < out.length - 1; i++) if ((out[i].split('*').length - 1) % 2) { out[i] += '*'; out[i + 1] = '*' + out[i + 1]; }
+        return out.join('\n');
+      }).join('\n');
+    }
+    width(ctx, t) { ctx.font = this.font(t); return Math.max(...plain(this.lines(t)).split('\n').map((l) => ctx.measureText(l).width)); }
     pivot(t) {
       const w = this.width(SA._ctx || SA._mctx, t);
       const a = this.props.align;
@@ -364,7 +386,7 @@
     }
     localBox(t) {
       const w = this.width(SA._mctx || (SA.measure('x'), SA._mctx), t), size = this.get('size', t);
-      const n = String(this.get('text', t)).split('\n').length, h = n * size * this.props.lineHeight;
+      const n = this.lines(t).split('\n').length, h = n * size * this.props.lineHeight;
       const a = this.props.align, x0 = a === 'center' ? -w / 2 : a === 'right' ? -w : 0;
       return [x0, -h / 2, x0 + w, h / 2];
     }
@@ -376,7 +398,7 @@
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
       const base = this.get('color', t), hl = this.get('hl', t) || SA.C.orange;
-      const lines = String(this.get('text', t)).split('\n').map((l) => {
+      const lines = this.lines(t).split('\n').map((l) => {
         const segs = parseRich(l, base, hl);
         for (const g of segs) g.w = ctx.measureText(g.s).width;
         return { segs, w: segs.reduce((a, g) => a + g.w, 0), n: segs.reduce((a, g) => a + g.s.length, 0) };
@@ -1188,7 +1210,7 @@
     // move a node to the screen-fixed layer (coords = screen pixels)
     hud(node) { this.items = this.items.filter((n) => n !== node); this.hudItems.push(node); return node; }
     scrim(p) { const n = new Scrim(p); this.hudItems.unshift(n); return n; }
-    caption(p) { return this.hud(this.text(Object.assign({ align: 'center', reveal: 'type' }, p))); }
+    caption(p) { return this.hud(this.text(Object.assign({ align: 'center', reveal: 'type', maxW: this.W - 120 }, p))); }
     // captions-only narration: one line of story at the subtitle position, typed in, faded out before the next
     say(text, t0, t1, opts = {}) {
       const c = this.caption(Object.assign({ text, x: this.W / 2, y: this.H > this.W ? 345 : this.safe.captionY, size: this.H > this.W ? 62 : 50, color: SA.C.white, hl: SA.C.orange }, opts));

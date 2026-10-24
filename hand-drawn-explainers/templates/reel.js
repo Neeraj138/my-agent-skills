@@ -17,7 +17,7 @@ SA.scene('my-reel', {
   // No drawIn on the key parts (they're visible from t = 0), or finish drawing by ~0.4 s. Keep something moving from the first frame.
   hook.center(MID, (top + bottom) / 2);
   // hook text for muted viewers, even with subtitles off: 3–7 words, ≥ 84 px, gone once the voice has taken over
-  // const hookText = s.caption({ text: 'Why does a\nwound *swell*?', x: MID, y: 400, size: TYPE.title, hl: C.orange }).fadeOut(2.8, 0.4);
+  // const hookText = s.caption({ text: 'Why does a wound *swell*?', x: MID, y: 400, size: TYPE.title, hl: C.orange, maxW: 800 }).fadeOut(2.8, 0.4);
 
   // ---- 2 · the world the rest of the piece lives in (build once, then move the camera through it)
   const T2 = cue('setup phrase');
