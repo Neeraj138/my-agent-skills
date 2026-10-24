@@ -18,7 +18,7 @@ What works:
 - **A question or a tension the video resolves**, in the audience's words. Examples: "Why does a wound swell?", "How X-rays see atoms", "What happens when you type a URL?". Don't use clickbait the video doesn't pay off ("You won't believe…"), and never a bare topic label like "Inflammation, part 1".
 - **The visual is the most interesting moment of the piece:** the payoff picture or the dramatic middle (a neutrophil squeezing through the vessel wall), drawn big. Never an empty set-up frame.
 - **High contrast and simple shapes.** It must still read when shrunk to ~270 px wide. Check by scaling it down: `magick out/<name>_cover.png -resize 270x out/<name>_cover_small.png`, then open the small file and look at it.
-- **Inside the crop.** Instagram shows a 4:5 crop in the feed and a 3:4 crop in the profile grid (as of 2025; check if it looks off). Keep the title and the key visual between y ≈ 300 and 1620 on a 1080×1920 frame. Render with `--cover` to see the crop: shaded = cut in the feed, dashed = the grid tile.
+- **Inside the crop.** Instagram shows a 4:5 crop in the feed and a 3:4 crop in the profile grid (as of 2025; check if it looks off). YouTube Shorts covers are picked from the video, and LinkedIn takes an uploaded thumbnail. Keep the title and the key visual between y ≈ 300 and 1620 on a 1080×1920 frame. Render with `--cover` to see the crop: shaded = cut in the feed, dashed = the grid tile.
 - **Series consistency:** same title position, type size and colour logic across a series, so the grid reads as a set.
 
 How to make it:

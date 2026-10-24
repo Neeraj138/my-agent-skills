@@ -4,8 +4,8 @@
 1. The look · 2. Frame & layout numbers · 3. Staging a process · 4. Text · 5. Motion & pace · 6. Frame checklist · 7. Slop list · 8. Failure gallery (what weak outputs looked like and how to fix them)
 
 ## 1. The look
-- Background `#121212` with a faint star field (automatic). Hand-drawn font Virgil. Rough strokes with a second pass, diagonal hatch fills at low alpha. Don't change this look per project.
-- Palette `SA.C`: blue, teal, purple, lilac, pink, orange, red, yellow, green, white, grey. Before building, write a **colour key** in the script file (e.g. *pathogen = orange, neutrophil = purple, vessel = blue, chemical signal = yellow, damage = red*) and keep it for the whole piece. Neutral text `#bdbdbd`, emphasis `C.yellow`.
+- Two themes: **dark** (default; `#121212` with a faint star field) and **light** (warm paper `#faf9f6`, Excalidraw's light palette). Hand-drawn font Virgil, rough strokes with a second pass, diagonal hatch fills at low alpha. Choose the theme in the brief and keep it for the whole piece.
+- Palette `SA.C`: blue, teal, purple, lilac, pink, orange, red, yellow, green, white, grey. Before building, write a **colour key** in the script file (e.g. *pathogen = orange, neutrophil = purple, vessel = blue, chemical signal = yellow, damage = red*) and keep it for the whole piece. Neutral text `C.muted`, main text `C.ink`, emphasis `C.yellow`. Use role names only, never hex greys, so scenes work in both themes.
 - Stroke weight: important outlines 3–4 px, secondary structure 2 px, data bars/arrows ≥ 4 px (at 1080 px frame width). Hairlines (1 px) disappear on phones.
 
 ## 2. Frame & layout numbers

@@ -52,10 +52,11 @@
     cv.width = scene.W; cv.height = scene.H; cv.style.aspectRatio = scene.W + '/' + scene.H;
     const ctx = cv.getContext('2d');
     window.SCENE = scene;
-    // ?safe overlays the areas Instagram/TikTok UI covers on vertical video
-    const safe = qs.has('safe') && scene.H > scene.W;
+    // ?safe overlays the areas platform UI covers on vertical video: ?safe = the scene's platform, ?safe=shorts|instagram|linkedin|all
+    const safe = qs.has('safe') && scene.reel;
+    const ui = (qs.get('safe') && SA.PLATFORMS[qs.get('safe')]) || scene.safe.ui;
     // ?cover shows how a vertical cover gets cropped: shaded = outside the 4:5 feed crop, dashed = 3:4 profile-grid crop
-    const cover = qs.has('cover') && scene.H > scene.W;
+    const cover = qs.has('cover') && scene.reel;
     window.renderAt = (t) => {
       scene.render(ctx, t);
       if (cover) {
@@ -67,9 +68,9 @@
       }
       if (!safe) return;
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.25; ctx.fillStyle = '#ff0040';
-      ctx.fillRect(0, 0, scene.W, 220);                    // top bar
-      ctx.fillRect(0, scene.H - 380, scene.W, 380);        // username / caption / audio
-      ctx.fillRect(scene.W - 140, 1000, 140, scene.H - 1380); // like/comment/share buttons
+      ctx.fillRect(0, 0, scene.W, ui.top);                         // top bar
+      ctx.fillRect(0, scene.H - ui.bottom, scene.W, ui.bottom);    // username / caption / audio
+      if (ui.strip) ctx.fillRect(scene.W - 140, ui.strip[0], 140, ui.strip[1] - ui.strip[0]); // like/comment/share buttons
       ctx.globalAlpha = 1;
     };
     window.READY = true;

@@ -3,7 +3,7 @@
 Files: `engine/sketchanim.js` (engine), `player.html` (preview), `render.mjs` (stills/sheets/MP4 at 60 fps), `engine/hnsw.js` (example of a real algorithm with a trace), `tools/` (`voice.mjs` ElevenLabs, `voice_local.py` offline Kokoro, `asr_check.py` clarity, `srt.mjs` subtitle file, `excalidraw-lib.mjs` icon import).
 
 ## Contents
-1. Scene & camera · 2. Animating · 3. Primitives · 4. Components · 5. Layout · 6. Text & subtitles · 7. Voice · 8. Packs · 9. Rendering · 10. Gotchas
+1. Scene & camera · 2. Animating · 3. Primitives · 4. Components · 5. Layout · 6. Text & subtitles · 7. Voice · 8. Packs · 9. Rendering · 10. Gotchas · 11. Themes, platforms & formats · 12. Extending
 
 ## 1. Scene & camera
 ```js
@@ -14,7 +14,8 @@ opts: `width/height` (1080×1920 reels, 1920×1080 default, 1080×1080 square), 
 - HUD (screen-fixed) layer: `s.hud(node)`, `s.caption({...})` (centred text on the HUD), `s.say(text, t0, t1, {hl, size})` (captions-only narration line at y 345), `s.scrim()` (fades the top so subtitles stay readable).
 - `s.safe` = `{left, right, top, bottom, cx, captionY, labelY}` for the format (reels: x 140–940, y 500–1540, captions 345, label 520; 16:9: x 80–1840, y 60–910, captions H−95 at the bottom, label 90). `s.W`, `s.H`.
 - `s.scrim()` fades the subtitle band (top on reels, bottom on 16:9). Only needed when subtitles or `s.say` captions are on.
-- `SA.params` = URL/`--param` values (e.g. `pack=...`).
+- `SA.params` = URL/`--param` values (e.g. `pack=...`, `theme=light`, `platform=shorts`, `format=4x5`).
+- More opts: `theme` ('dark' | 'light'), `platform` ('instagram' | 'shorts' | 'linkedin' | 'all', vertical video only), `formats` ({ '4x5': [1080, 1350] }: alternate sizes of the same scene). See §11.
 
 ## 2. Animating (every node; chainable; t in seconds)
 `drawIn(t, d)` pen-draw (strokes trace, text writes; dots/sparkles/counters have nothing to trace — use `popIn`/`fadeIn`) · `fadeIn(t, d)` · `popIn(t, d)` (scale from 0 with overshoot) · `fadeOut(t, d)` · `dim(t, d, to=0.15)` (never brightens an already-faded node) · `to(t, d, {anyProp: value}, ease)` · `set(t, {prop})` (jump) · `moveTo(t, d, x, y)` · `along(t, d, [[x,y],...], ease)` (follow a path at constant speed) · `recolor(t, d, color)` · `undraw`.
@@ -83,3 +84,14 @@ Needs `out/voice/my_vo.js` in `requires` (written by `tools/voice.mjs tts` or `t
 - Rough shapes cache geometry by size; animating `w/h` re-generates each frame (fine, but keep it to a few nodes).
 - Deterministic randomness: use `SA.rng(seed)`, never `Math.random()`.
 - Keep world sections apart (e.g. 1400 px) and move the camera between them; fade out the previous act before the move.
+
+## 11. Themes, platforms & formats
+- **Themes**: `SA.THEMES.dark` (default) and `SA.THEMES.light`. The scene's theme is applied to `SA.C` before it builds. Role names: `C.ink` (main text and strokes; `C.white` is the same colour, kept for old scenes), `C.muted` (secondary text), `C.dim` (faded structure), `C.bg` (background, label pills), `C.mid`, plus the hues `blue teal purple lilac pink orange red green yellow grey`. In light mode, yellow is amber so it stays readable. Icon packs map to either theme automatically. Never hard-code a hex grey, because it will vanish in one of the themes.
+- **Platforms** (vertical 9:16 only): `SA.PLATFORMS` gives the UI cover per app, in px on a 1080×1920 frame: instagram top 220 / bottom 380, shorts 225 / 480, linkedin 150 / 300, all = the union. `s.safe.bottom` follows it (1540 / 1440 / 1620 / 1440). `--safe` draws the scene's platform; `--safe shorts` previews another.
+- **Formats**: `opts.formats = { '4x5': [1080, 1350] }` plus `--param format=4x5` renders the same scene at another size. `s.reel` is true only for tall (≥ 1.6) frames; 4:5, 1:1 and 16:9 use bottom subtitles and the 16:9-style `s.safe`. Lay scenes out from `s.W`, `s.H` and `s.safe`, not fixed pixels, so the extra format works.
+
+## 12. Extending (see SKILL.md §6)
+- `SA.extend({ name(p) { return this.add(new Thing(p)); } })` adds `s.name()` and `group.name()`. Pass `{ override: true }` to replace an existing builder on purpose.
+- Core classes to build from: `SA.Node`, `SA.Group`, `SA.Box`, `SA.Ellipse`, `SA.Line`, `SA.Curve`, `SA.Text`, `SA.Rough` (any SVG path), `SA.Dot`, `SA.Sketch`. Use `SA.nextSeed()` for rough-shape seeds, `SA.measure(text, size)` for text width, and `SA.C` for colours.
+- A component needs `localBox()` (or children with boxes) so `bbox / center / fit` can measure it, and usually a `drawIn(t, d)` that reveals its parts in order. Example: `engine/ext/callout.js`.
+- Regression check: `node tools/regress.mjs baseline`, then edit, then `node tools/regress.mjs check`.

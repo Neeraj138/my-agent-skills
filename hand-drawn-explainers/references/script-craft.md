@@ -19,7 +19,7 @@ Open on something the viewer has seen, done or asked at their level. A newcomer:
 - If you use one, keep **one** analogy from start to finish and make it explain *why*, not just *what*. Don't mix metaphors. If a step doesn't fit the analogy, rephrase the step.
 
 ## Lines
-- One idea per sentence, ≤ ~20 words, said the way a good teacher talks. Read every line out loud.
+- Write in ASD-STE100 Simplified Technical English (`ste100.md`): one topic per sentence, ≤ 20 words (aim for 8–16), active voice, simple tenses, no contractions or idioms. Read every line out loud. It must still sound like a calm teacher, not like a manual.
 - Earn every term before using it: show it, then name it. Introduce at most one new term per beat.
 - Numbers: few, rounded to the depth (specialists may want exact values). Spell them out for TTS.
 - Spell acronyms with dots for TTS ("I. C. A. M. one") and map them back with `display`.

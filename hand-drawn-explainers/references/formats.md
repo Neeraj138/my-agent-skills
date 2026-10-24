@@ -12,6 +12,20 @@ node render.mjs <name> --sheet 2,4,6,8,10 [--cols 5] [--safe] --out out/<name>_s
 ```
 `--safe` paints the reel UI zones red (vertical scenes only). `--cover` shades what Instagram's 4:5 feed crop cuts and dashes the 3:4 profile-grid crop. `--param k=v` passes URL params to the scene.
 
+## Platforms (vertical video)
+| | Instagram Reels | YouTube Shorts | LinkedIn |
+|---|---|---|---|
+| master | 1080×1920 (9:16) | 1080×1920 (9:16) | 1080×1920 (9:16); optional extra 1080×1350 (4:5) cut |
+| length | ≤ 3 min recommended | ≤ 3 min | ≤ 10 min |
+| `platform` | `'instagram'` (UI: top 220, bottom 380, right buttons) | `'shorts'` (top 225, bottom 480, right buttons) | `'linkedin'` (top 150, bottom 300) |
+| cover | custom upload; grid crops the centre 3:4, feed the centre 4:5 (`--cover`) | picked from the video; make frame 0 / the first second cover-worthy | custom thumbnail upload |
+Posting one video everywhere? Use `platform: 'all'` (the union of the zones). Numbers are approximate, from 2026 platform guides. If an app's UI visibly covers something, trust your eyes and adjust.
+```bash
+node render.mjs <name> --sheet 2,6,10 --safe shorts --out out/<name>_shorts_check.png   # preview another platform's zone
+node render.mjs <name> --param format=4x5 --out out/<name>_4x5.mp4                      # LinkedIn 4:5 cut (scene needs opts.formats)
+node render.mjs <name> --param theme=light --out out/<name>_light.mp4                   # light version of the same scene
+```
+
 ## Video (MP4, 60 fps)
 ```bash
 node render.mjs <name>                      # → out/<name>.mp4, H.264 + AAC, 60 fps (default), loudness-normalised voice

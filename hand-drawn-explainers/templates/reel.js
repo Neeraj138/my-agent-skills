@@ -2,6 +2,9 @@
 // Pick the script shape that fits the topic (references/script-craft.md); this skeleton follows the "concept" shape.
 SA.scene('my-reel', {
   width: 1080, height: 1920, worldHeight: 3200, seed: 7,
+  platform: 'instagram',                                  // 'instagram' | 'shorts' | 'linkedin' | 'all' → s.safe avoids that app's UI
+  theme: 'dark',                                          // or 'light'; use C.ink / C.muted / C.dim, never hex greys
+  formats: { '4x5': [1080, 1350] },                       // optional LinkedIn cut: --param format=4x5 (lay out from s.W/s.H/s.safe)
   requires: ['out/voice/my_reel.js'],                     // voice timings (+ any 'assets/packs/<slug>.js')
 }, (s, { C, TYPE }) => {
   // Subtitles are off by default. Only if the user asked for them: add `subtitles: true` here and uncomment s.scrim().

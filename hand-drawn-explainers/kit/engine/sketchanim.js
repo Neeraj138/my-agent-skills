@@ -9,21 +9,29 @@
   const W = 1920, H = 1080;
   const SA = (window.SA = { W, H, scenes: {} });
 
-  // ---------- palette (sampled from the reference clip) ----------
-  SA.C = {
-    bg: '#121212',
-    blue: '#4a90e2',
-    teal: '#20a07a',
-    purple: '#a98bf5',
-    lilac: '#d58cf0',
-    pink: '#f27fa0',
-    orange: '#f47b35',
-    red: '#d0574f',
-    grey: '#6a6d73',
-    green: '#4caf50',
-    yellow: '#f2c94c',
-    white: '#e6e6e6',
-    dim: '#3a3a3e',
+  // ---------- palettes ----------
+  // A scene picks one with opts.theme ('dark' default | 'light') or --param theme=light; SA.C is swapped before it builds.
+  // Use the role names in scenes, never hex greys: ink = main text/strokes (C.white is the same colour, kept for old scenes),
+  // muted = secondary text, dim = faded structure, bg = background (also label pills).
+  SA.THEMES = {
+    dark: {   // sampled from the reference clip
+      bg: '#121212', blue: '#4a90e2', teal: '#20a07a', purple: '#a98bf5', lilac: '#d58cf0', pink: '#f27fa0',
+      orange: '#f47b35', red: '#d0574f', grey: '#6a6d73', green: '#4caf50', yellow: '#f2c94c',
+      white: '#e6e6e6', ink: '#e6e6e6', muted: '#bdbdbd', dim: '#3a3a3e',
+      mid: '#8a8a8a', star: '#9a9a9a', glyph: '#4a4a4a', node: '#c9c9c9', edge: '#55657c',
+    },
+    light: {  // Excalidraw's light palette on warm paper; yellow is amber so it reads on white
+      bg: '#faf9f6', blue: '#1971c2', teal: '#0c8599', purple: '#6741d9', lilac: '#9c36b5', pink: '#c2255c',
+      orange: '#e8590c', red: '#e03131', grey: '#868e96', green: '#2f9e44', yellow: '#e67700',
+      white: '#1e1e1e', ink: '#1e1e1e', muted: '#555a60', dim: '#d4d4d8',
+      mid: '#7a7f86', star: '#b8b8b8', glyph: '#cfcfcf', node: '#3d3d3d', edge: '#8fa3bf',
+    },
+  };
+  SA.C = Object.assign({}, SA.THEMES.dark);
+  SA.theme = 'dark';
+  SA.useTheme = function (name) {
+    if (!SA.THEMES[name]) throw new Error(`unknown theme '${name}' (have: ${Object.keys(SA.THEMES).join(', ')})`);
+    Object.assign(SA.C, SA.THEMES[name]); SA.theme = name;
   };
 
   // ---------- utils ----------
@@ -792,7 +800,7 @@
     // unset top/solid/fade follow the format: reels fade the top (subtitles at y≈335), 16:9 fades the bottom (subtitles at the bottom)
     defaults() { return { top: null, solid: null, fade: null, color: SA.C.bg }; }
     paint(ctx, t, o) {
-      const sc = SA._scene, [r, g, b] = hexToRgb(this.props.color), wide = sc.W > sc.H;
+      const sc = SA._scene, [r, g, b] = hexToRgb(this.props.color), wide = !sc.reel;
       const top = this.props.top ?? !wide, solid = this.props.solid ?? (wide ? 120 : 420), fade = this.props.fade ?? (wide ? 110 : 160);
       const y0 = top ? 0 : sc.H - solid - fade;
       const gr = ctx.createLinearGradient(0, top ? solid : y0 + fade, 0, top ? solid + fade : y0);
@@ -807,9 +815,9 @@
     const R = mulberry32(seed), stars = [];
     const X0 = -0.8 * w, SW = 2.7 * w, Y0 = -0.8 * h, SH = Math.max(3.3 * h, worldH + 1.6 * h);
     const k = (SW * SH) / (5200 * 3600);
-    for (let i = 0; i < 260 * k; i++) stars.push({ x: X0 + R() * SW, y: Y0 + R() * SH, r: 0.8 + R() * 1.6, a: 0.08 + R() * 0.25, ph: R() * 6.28, c: R() < 0.12 ? (R() < 0.5 ? SA.C.orange : SA.C.blue) : '#9a9a9a' });
+    for (let i = 0; i < 260 * k; i++) stars.push({ x: X0 + R() * SW, y: Y0 + R() * SH, r: 0.8 + R() * 1.6, a: 0.08 + R() * 0.25, ph: R() * 6.28, c: R() < 0.12 ? (R() < 0.5 ? SA.C.orange : SA.C.blue) : SA.C.star });
     const glyphs = [];
-    for (let i = 0; i < 26 * k; i++) glyphs.push(new Sparkle({ x: X0 + R() * SW, y: Y0 + R() * SH, size: 6 + R() * 5, color: '#4a4a4a', width: 1.5, phase: R() * 6 }));
+    for (let i = 0; i < 26 * k; i++) glyphs.push(new Sparkle({ x: X0 + R() * SW, y: Y0 + R() * SH, size: 6 + R() * 5, color: SA.C.glyph, width: 1.5, phase: R() * 6 }));
     return { stars, glyphs };
   }
 
@@ -925,7 +933,7 @@
 
   // Nodes + undirected edges. nodes: [[x,y], ...] (local coords), edges: [[i,j], ...].
   class Graph extends Group {
-    defaults() { return { nodes: [], edges: [], r: 8, color: '#c9c9c9', edgeColor: '#55657c', edgeWidth: 1.8 }; }
+    defaults() { return { nodes: [], edges: [], r: 8, color: SA.C.node, edgeColor: SA.C.edge, edgeWidth: 1.8 }; }
     constructor(props) {
       super(props);
       const P = this.props;
@@ -1063,13 +1071,19 @@
     if (!c || c === 'transparent') return null;
     if (c[0] !== '#') return c;
     if (mode === 'raw') return c;
-    const rgb = darkMode(c);
+    const light = SA.theme === 'light';     // libraries are drawn for light mode: only invert for dark scenes
+    const rgb = light ? hexToRgb(c).map((v) => v / 255) : darkMode(c);
     if (mode === 'dark') return toHex(rgb);
     const [h, sat, l] = hsl(rgb);
     if (sat < 0.22 || l < 0.08) {          // neutrals
+      if (light) {
+        if (l < 0.4) return SA.C.ink;
+        if (l > 0.78) return kind === 'fill' ? SA.C.bg : SA.C.dim;
+        return SA.C.mid;
+      }
       if (l > 0.6) return SA.C.white;
-      if (l < 0.22) return kind === 'fill' ? SA.C.bg : '#3a3a3e';
-      return '#8a8a8a';
+      if (l < 0.22) return kind === 'fill' ? SA.C.bg : SA.C.dim;
+      return SA.C.mid;
     }
     let best = HUES[0], bd = 999;
     for (const hh of HUES) { const d = Math.min(Math.abs(h - hh[1]), 360 - Math.abs(h - hh[1])); if (d < bd) { bd = d; best = hh; } }
@@ -1193,16 +1207,26 @@
   class Scene {
     constructor(opts) {
       this.opts = opts;
+      SA.useTheme((SA.params && SA.params.theme) || opts.theme || 'dark');
+      this.theme = SA.theme;
       this.duration = opts.duration || 10;
       this.bg = opts.bg || SA.C.bg;
       this.W = opts.width || W; this.H = opts.height || H;
+      // alternate frame sizes of the same scene: opts.formats = { '4x5': [1080, 1350] }, picked with --param format=4x5
+      const fmt = SA.params && SA.params.format;
+      if (fmt && opts.formats && opts.formats[fmt]) [this.W, this.H] = opts.formats[fmt];
+      this.reel = this.H / this.W > 1.6;   // 9:16-style vertical video (reels/shorts); 4:5 and 1:1 lay out like 16:9
+      this.platform = (SA.params && SA.params.platform) || opts.platform || 'instagram';
       this.items = [];
       this.hudItems = []; // screen-fixed layer (captions), not moved by the camera
       this.camera = new Node({ cx: this.W / 2, cy: this.H / 2, zoom: 1 });
       // where content should live (reels: clear of Instagram/TikTok UI; centered on W/2)
       // reels: Instagram/TikTok cover the top 220 px, the bottom 380 px, and a right strip (x > 940) from y 1000 to 1540.
       // Keep content centred in x 140–940; the subtitle/caption band is y 260–430, so diagrams live in y 500–1540.
-      this.safe = this.H > this.W ? { left: 140, right: 940, top: 500, bottom: 1540, cx: this.W / 2, captionY: 345, labelY: 520 } : { left: 80, right: this.W - 80, top: 60, bottom: this.H - 170, cx: this.W / 2, captionY: this.H - 95, labelY: 90 };
+      // platform UI zones (SA.PLATFORMS) set the bottom edge: instagram 1540, shorts/all 1440, linkedin 1620
+      const ui = SA.PLATFORMS[this.platform] || SA.PLATFORMS.instagram;
+      this.safe = this.reel ? { left: 140, right: 940, top: 500, bottom: this.H - ui.bottom, cx: this.W / 2, captionY: 345, labelY: 520, ui }
+        : { left: 80, right: this.W - 80, top: 60, bottom: this.H - 170, cx: this.W / 2, captionY: this.H - 95, labelY: 90, ui: null };
       this.sky = opts.stars === false ? null : starfield(opts.seed || 11, this.W, this.H, opts.worldHeight || 0);
       this._seed = 100;
     }
@@ -1213,7 +1237,7 @@
     caption(p) { return this.hud(this.text(Object.assign({ align: 'center', reveal: 'type', maxW: this.W - 120 }, p))); }
     // captions-only narration: one line of story at the subtitle position, typed in, faded out before the next
     say(text, t0, t1, opts = {}) {
-      const c = this.caption(Object.assign({ text, x: this.W / 2, y: this.H > this.W ? 345 : this.safe.captionY, size: this.H > this.W ? 62 : 50, color: SA.C.white, hl: SA.C.orange }, opts));
+      const c = this.caption(Object.assign({ text, x: this.W / 2, y: this.reel ? 345 : this.safe.captionY, size: this.reel ? 62 : 50, color: SA.C.white, hl: SA.C.orange }, opts));
       c.drawIn(t0, opts.d || Math.min(1.3, 0.04 * text.length));
       if (t1) c.fadeOut(t1, 0.3);
       return c;
@@ -1227,7 +1251,7 @@
       this.opts.audio = this.opts.audio || `out/voice/${id}.mp3`;
       this.opts.audioOffset = offset;
       this.duration = vo.end + tail;
-      if (subtitles) this.subtitles(Object.assign({ words: vo.words, offset, x: this.W / 2, y: this.H > this.W ? 335 : this.safe.captionY, size: this.H > this.W ? 54 : 46, hl: SA.C.yellow, maxChars: this.H > this.W ? 28 : 52 }, subtitles === true ? {} : subtitles));
+      if (subtitles) this.subtitles(Object.assign({ words: vo.words, offset, x: this.W / 2, y: this.reel ? 335 : this.safe.captionY, size: this.reel ? 54 : 46, hl: SA.C.yellow, maxChars: this.reel ? 28 : 52 }, subtitles === true ? {} : subtitles));
       return vo;
     }
     cam(t, d, cx, cy, zoom, ease = 'inOut') { this.camera.to(t, d, { cx, cy, zoom }, ease); return this; }
@@ -1255,6 +1279,25 @@
   Object.assign(Group.prototype, Build);
   Object.assign(Scene.prototype, Object.fromEntries(Object.entries(Build).filter(([k]) => !(k in Scene.prototype))));
   SA.Scene = Scene;
+
+  // UI that covers a 1080×1920 vertical video, per platform (px from the top/bottom edge; strip = right-hand
+  // button column [y0, y1], x > 940). Approximate, from 2026 platform guides; 'all' = the union, for one video posted everywhere.
+  SA.PLATFORMS = {
+    instagram: { top: 220, bottom: 380, strip: [1000, 1540] },
+    shorts: { top: 225, bottom: 480, strip: [900, 1440] },
+    linkedin: { top: 150, bottom: 300, strip: null },
+    all: { top: 225, bottom: 480, strip: [900, 1540] },
+  };
+
+  // Add builders without editing the core: SA.extend({ cell(p) { return this.add(new MyCell(p)); } })
+  // makes s.cell(...) and group.cell(...) available. Existing names are protected unless { override: true }.
+  SA.nextSeed = nextSeed;
+  SA.extend = function (builders, { override = false } = {}) {
+    for (const [name, fn] of Object.entries(builders)) {
+      if (!override && (name in Build || name in Scene.prototype)) throw new Error(`SA.extend: '${name}' already exists (pass { override: true } to replace it on purpose)`);
+      Build[name] = fn; Group.prototype[name] = fn; Scene.prototype[name] = fn;
+    }
+  };
 
   SA.scene = function (name, opts, build) {
     SA.scenes[name] = { opts, build };
