@@ -23,7 +23,9 @@ await page.waitForFunction(() => window.READY === true, null, { timeout: 30000 }
 const grab = (t) => page.evaluate((t) => { renderAt(t); return document.getElementById('c').toDataURL('image/png'); }, t)
   .then((u) => Buffer.from(u.slice(u.indexOf(',') + 1), 'base64'));
 
-mkdirSync(path.join(here, 'out'), { recursive: true });
+// project scenes ('folder/scene') write their default outputs to folder/out/
+const outDir = name.includes('/') ? path.join(here, path.dirname(name), 'out') : path.join(here, 'out'), base = path.basename(name);
+mkdirSync(outDir, { recursive: true });
 
 // --still t1,t2 → one PNG per time ({t} in --out is replaced by the time)
 // --sheet t1,t2,... → a single contact sheet PNG of those times (--cols N, default 5), e.g. to review a reel
@@ -33,7 +35,7 @@ if (still !== null || sheet !== null) {
   const times = (still ?? sheet).split(',');
   const files = [];
   for (const [i, s] of times.entries()) {
-    const f = sheet !== null ? path.join(here, 'out', `.sheet_${name}_${i}_${s}.png`) : opt('out', path.join(here, 'out', `${name}_${s}s.png`)).replace('{t}', s);
+    const f = sheet !== null ? path.join(outDir, `.sheet_${base}_${i}_${s}.png`) : opt('out', path.join(outDir, `${base}_${s}s.png`)).replace('{t}', s);
     mkdirSync(path.dirname(path.resolve(f)), { recursive: true });
     writeFileSync(f, await grab(+s));
     files.push(f);
@@ -41,7 +43,7 @@ if (still !== null || sheet !== null) {
   }
   await browser.close();
   if (sheet !== null) {
-    const out = opt('out', path.join(here, 'out', `${name}_sheet.png`)), cols = +opt('cols', 5);
+    const out = opt('out', path.join(outDir, `${base}_sheet.png`)), cols = +opt('cols', 5);
     mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
     const n = files.length, rows = Math.ceil(n / cols);
     const layout = files.map((_, i) => `${(i % cols) ? Array.from({ length: i % cols }, (_, k) => 'w' + k).join('+') : '0'}_${Math.floor(i / cols) ? Array.from({ length: Math.floor(i / cols) }, (_, k) => 'h' + k * cols).join('+') : '0'}`).join('|');
@@ -57,7 +59,7 @@ if (still !== null || sheet !== null) {
 
 const duration = await page.evaluate(() => SCENE.duration);
 const from = +opt('from', 0), to = +opt('to', duration);
-const out = opt('out', path.join(here, 'out', `${name}.mp4`));
+const out = opt('out', path.join(outDir, `${base}.mp4`));
 mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
 // audio: --audio file.mp3 to add a soundtrack, otherwise a silent track (some upload tools reject video-only files)
 // scene voiceover (opts.audio, placed at opts.audioOffset seconds) is used automatically
@@ -74,12 +76,28 @@ const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate
 
 const n = Math.round((to - from) * fps);
 const t0 = Date.now();
+// progress: a live bar on a terminal, a line every 5 % in logs, and <out>.progress.json for `node tools/render-status.mjs`
+const { writeFileSync: writeProgress } = await import('node:fs');
+const progFile = out + '.progress.json', tty = process.stdout.isTTY;
+const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+let lastShown = 0, lastPct = -1;
+const progress = (i, stage = 'rendering') => {
+  const el = (Date.now() - t0) / 1000, rate = i / Math.max(el, 1e-3), eta = (n - i) / Math.max(rate, 1e-3), pct = (i / n) * 100;
+  const info = { out, stage, frame: i, total: n, percent: +pct.toFixed(1), fps: +rate.toFixed(1), elapsed: Math.round(el), eta: Math.round(eta), updated: new Date().toISOString() };
+  try { writeProgress(progFile, JSON.stringify(info)); } catch {}
+  const bar = '█'.repeat(Math.round(pct / 4)).padEnd(25, '░');
+  const line = `${bar} ${pct.toFixed(1).padStart(5)}%  frame ${i}/${n}  ${rate.toFixed(1)} fps  elapsed ${mmss(el)}  left ${stage === 'rendering' ? mmss(eta) : '—'}  ${stage}`;
+  if (tty) process.stdout.write('\r' + line);
+  else if (Math.floor(pct / 5) !== lastPct || stage !== 'rendering') { lastPct = Math.floor(pct / 5); console.log(line); }
+};
 for (let i = 0; i < n; i++) {
   const buf = await grab(from + i / fps);
   if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
-  if (i % fps === 0) process.stdout.write(`\rframe ${i}/${n}`);
+  if (Date.now() - lastShown > 500) { lastShown = Date.now(); progress(i); }
 }
+progress(n, 'finishing (encoding audio + mp4)');
 ff.stdin.end();
 await new Promise((r) => ff.on('close', r));
 await browser.close();
-console.log(`\nwrote ${out} (${n} frames in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+progress(n, 'done');
+console.log(`\nwrote ${out} (${n} frames in ${mmss((Date.now() - t0) / 1000)})`);

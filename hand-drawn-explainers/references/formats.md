@@ -27,6 +27,11 @@ node render.mjs <name> --param theme=light --out out/<name>_light.mp4           
 ```
 
 ## Video (MP4, 60 fps)
+A full render takes a while (≈ 20–40 frames/s, so a 5-minute video at 60 fps is ~10–20 min). Run it in the background, tell the user the estimate, and report progress when asked. The renderer shows a live bar (percent, frames, fps, elapsed, time left) and keeps `<out>.progress.json` up to date:
+```bash
+node tools/render-status.mjs                 # one-line status of the newest render
+node tools/render-status.mjs --watch         # live loader until it finishes — suggest the user runs it: ! node tools/render-status.mjs --watch
+```
 ```bash
 node render.mjs <name>                      # → out/<name>.mp4, H.264 + AAC, 60 fps (default), loudness-normalised voice
 node render.mjs <name> --from 30 --to 45 --out out/<name>_part.mp4   # a section, for quick checks

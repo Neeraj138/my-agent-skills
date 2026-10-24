@@ -102,7 +102,7 @@
   // ---------- base node ----------
   class Node {
     constructor(props = {}) {
-      this.props = Object.assign({ x: 0, y: 0, opacity: 1, scale: 1, rotation: 0, draw: 1 }, this.defaults(), props);
+      this.props = Object.assign({ x: 0, y: 0, opacity: 1, scale: 1, sx: 1, sy: 1, rotation: 0, draw: 1 }, this.defaults(), props);  // sx/sy: extra stretch (squash a cell through a gap)
       this.tracks = {};
       this.children = [];
     }
@@ -156,8 +156,8 @@
       let b = this.localBox(t);
       for (const c of this.children) { const cb = c.bbox(t); if (cb) b = b ? union(b, cb) : cb; }
       if (!b) return null;
-      const s = this.get('scale', t);
-      if (s !== 1) { const [px, py] = this.pivot(t); b = [px + (b[0] - px) * s, py + (b[1] - py) * s, px + (b[2] - px) * s, py + (b[3] - py) * s]; }
+      const s = this.get('scale', t), kx = s * this.get('sx', t), ky = s * this.get('sy', t);
+      if (kx !== 1 || ky !== 1) { const [px, py] = this.pivot(t); b = [px + (b[0] - px) * kx, py + (b[1] - py) * ky, px + (b[2] - px) * kx, py + (b[3] - py) * ky]; }
       const x = this.get('x', t), y = this.get('y', t);
       return [b[0] + x, b[1] + y, b[2] + x, b[3] + y];
     }
@@ -167,10 +167,10 @@
       if (o <= 0.002 || s <= 0.002) return;
       ctx.save();
       ctx.translate(this.get('x', t), this.get('y', t));
-      const r = this.get('rotation', t);
-      if (s !== 1 || r) {
+      const r = this.get('rotation', t), sx = this.get('sx', t), sy = this.get('sy', t);
+      if (s !== 1 || r || sx !== 1 || sy !== 1) {
         const [px, py] = this.pivot(t);
-        ctx.translate(px, py); ctx.rotate(r); ctx.scale(s, s); ctx.translate(-px, -py);
+        ctx.translate(px, py); ctx.rotate(r); ctx.scale(s * sx, s * sy); ctx.translate(-px, -py);
       }
       this.paint(ctx, t, o);
       for (const c of this.children) c.render(ctx, t, o);

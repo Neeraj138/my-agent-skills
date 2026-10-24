@@ -18,7 +18,7 @@ These rules are written for any agent or model. Follow them literally. Wherever 
 
 ## 0. Non-negotiables
 
-1. **Use the engine.** Every frame comes from `engine/sketchanim.js` through `render.mjs`. Don't write a new renderer (Cairo, PIL, matplotlib, canvas from scratch, Manim…). Engine-less projects have come out thin-lined, tiny and off-style every time. The engine is meant to grow: when a piece needs something it lacks (a cell, a lens, a gear, a new chart, a new overlay), extend it following §6. Keep each project's files in `scenes/`, `scripts/`, `out/`, not in a new top-level folder with its own toolchain.
+1. **Use the engine.** Every frame comes from `engine/sketchanim.js` through `render.mjs`. Don't write a new renderer (Cairo, PIL, matplotlib, canvas from scratch, Manim…). Engine-less projects have come out thin-lined, tiny and off-style every time. The engine is meant to grow: when a piece needs something it lacks (a cell, a lens, a gear, a new chart, a new overlay), extend it following §6. Keep a piece's files together, either in `scenes/`, `scripts/`, `out/`, or in one project folder `<project>/` (scene `<project>/<name>.js` registered as `SA.scene('<project>/<name>', …)`, its parts, `script.md`, `voice/`, and renders in `<project>/out/`). Never build a separate toolchain there.
 2. **Ask before you build** (§1). Audience level, format, voice and subtitles (default: none) are the user's decisions. Don't assume "beginner" or "expert".
 3. **60 fps** for every video (`render.mjs` defaults to 60).
 4. **One focal action per moment, drawn big.** The thing being explained fills most of the frame (§3).
@@ -54,7 +54,7 @@ Write the answers at the top of `scripts/<topic>.md`. Every later choice is chec
 5. **Build** `scenes/<name>.js` (subtitles are off unless the user asked: then `s.useVoice(id, { subtitles: true })` + `s.scrim()`) from `templates/` (`reel.js` voiced 9:16, `reel-captions.js` captions-only, `landscape.js` 16:9 / slides). Add the name to `scenes/index.js`. API: `references/engine-api.md`. Icons: `references/packs.md`. Visual rules: `references/visual-quality.md`.
 6. **Check stills** at every beat: `node render.mjs <name> --sheet t1,t2,… --safe --out out/<name>_sheet.png`. Open the sheet and look at it, then run the frame checklist in `references/visual-quality.md`. **Phone test:** each tile is about 480 px wide. If a label can't be read in the tile, it's too small. Open single frames at full size (`--still t`) for anything dense. Fix and repeat until the checklist is clean.
 7. **Render review** with fresh eyes (§5), using a sheet every ~2 s plus the script. Fix, then re-check.
-8. **Export** the formats the user asked for (`references/formats.md`): MP4 at 60 fps, GIF, slides PDF, poster PNG. Reels also get a designed cover image (`scenes/<name>-cover.js`, checked with `--cover` and at 270 px wide).
+8. **Export** the formats the user asked for (`references/formats.md`). Long renders run in the background: give the user the time estimate and the live loader (`node tools/render-status.mjs --watch`). MP4 at 60 fps, GIF, slides PDF, poster PNG. Reels also get a designed cover image (`scenes/<name>-cover.js`, checked with `--cover` and at 270 px wide).
 9. **Deliver**: give the file paths and one line on what to look at. Mention anything you could not do.
 
 ## 3. What good looks like (short version; full rules and numbers in `references/visual-quality.md`)

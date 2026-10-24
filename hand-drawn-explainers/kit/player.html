@@ -37,7 +37,8 @@
   sel.onchange = () => { location.search = '?scene=' + sel.value; };
 
   const s = document.createElement('script');
-  s.src = 'scenes/' + name + '.js';
+  // a name with a folder (e.g. 'my-project/scene') loads <folder>/<scene>.js, so a project can keep its files together
+  s.src = name.includes('/') ? name + '.js' : 'scenes/' + name + '.js';
   const load = (src) => new Promise((ok, err) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => err(new Error('missing ' + src)); document.body.appendChild(e); });
   s.onload = async () => {
     // scenes may declare data files (e.g. voiceover timings) in opts.requires

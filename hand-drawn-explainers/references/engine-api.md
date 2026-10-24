@@ -18,7 +18,7 @@ opts: `width/height` (1080×1920 reels, 1920×1080 default, 1080×1080 square), 
 - More opts: `theme` ('dark' | 'light'), `platform` ('instagram' | 'shorts' | 'linkedin' | 'all', vertical video only), `formats` ({ '4x5': [1080, 1350] }: alternate sizes of the same scene). See §11.
 
 ## 2. Animating (every node; chainable; t in seconds)
-`drawIn(t, d)` pen-draw (strokes trace, text writes; dots/sparkles/counters have nothing to trace — use `popIn`/`fadeIn`) · `fadeIn(t, d)` · `popIn(t, d)` (scale from 0 with overshoot) · `fadeOut(t, d)` · `dim(t, d, to=0.15)` (never brightens an already-faded node) · `to(t, d, {anyProp: value}, ease)` · `set(t, {prop})` (jump) · `moveTo(t, d, x, y)` · `along(t, d, [[x,y],...], ease)` (follow a path at constant speed) · `recolor(t, d, color)` · `undraw`.
+`to(t, d, { sx, sy })` stretches a node on one axis (squeeze a cell through a gap; default 1) · `drawIn(t, d)` pen-draw (strokes trace, text writes; dots/sparkles/counters have nothing to trace — use `popIn`/`fadeIn`) · `fadeIn(t, d)` · `popIn(t, d)` (scale from 0 with overshoot) · `fadeOut(t, d)` · `dim(t, d, to=0.15)` (never brightens an already-faded node) · `to(t, d, {anyProp: value}, ease)` · `set(t, {prop})` (jump) · `moveTo(t, d, x, y)` · `along(t, d, [[x,y],...], ease)` (follow a path at constant speed) · `recolor(t, d, color)` · `undraw`.
 **Order matters:** each `to()` starts from the value at its start time as known *so far*, so add a node's animations in time order.
 Eases: `linear in out inOut smooth back step`. Props interpolate numbers, `#hex` colours and arrays.
 A node is invisible before its first reveal key only if you give it one (`drawIn/fadeIn/popIn`); otherwise it's visible from t=0.
@@ -73,7 +73,7 @@ Needs `out/voice/my_vo.js` in `requires` (written by `tools/voice.mjs tts` or `t
 `requires: ['assets/packs/<slug>.js']`, then `s.sketch({ pack: '<slug>', item: '<name>', height: 200, x, y }).drawIn(t, 1.2)`. Centre-anchored. Colours are mapped like Excalidraw dark mode and snapped to the palette; `tint: C.teal` makes it monochrome; solid fills become hatching unless `solid: true` (so a tinted solid phone renders as a hatched block — render once and look); `text: false` drops labels baked into an icon. Catalogue: `references/packs.md`, gallery images in `assets/packs/gallery/<slug>.png`.
 
 ## 9. Rendering
-- Preview: open `player.html?scene=<name>` (file:// works; audio plays in sync).
+- Preview: open `player.html?scene=<name>` (file:// works; audio plays in sync). A scene in a project folder is `?scene=<project>/<name>` and loads `<project>/<name>.js`; its default renders go to `<project>/out/`.
 - Stills: `node render.mjs <name> --still 3,8.5 [--safe] [--out dir/name_{t}.png] [--param k=v]` (`{t}` → the time; folders are created; `--safe` overlay is for vertical scenes).
 - Contact sheet: `node render.mjs <name> --sheet 2,4,6,... [--cols 6] [--safe] --out out/<name>_sheet.png`. `--cover` overlays Instagram's cover crops (4:5 feed, 3:4 grid).
 - Video: `node render.mjs <name>` → `out/<name>.mp4` (60 fps default, H.264 + AAC, loudness −15 LUFS target). `--from/--to` for a section, `--audio file` overrides. GIF/slides/PDF: `formats.md`.
