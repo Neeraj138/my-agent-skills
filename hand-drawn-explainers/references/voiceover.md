@@ -1,10 +1,10 @@
 # Voiceover + sync
 
-Two voice engines produce the same files (`<id>.mp3`, `<id>.json` word timings, `<id>.js` for the scene's `requires`), so scenes don't care which one you used.
+Three voice engines produce the same files (`<id>.mp3`, `<id>.json` word timings, `<id>.js` for the scene's `requires`), so scenes don't care which one you used.
 
 ## Which voice
-1. Ask the user (brief, §1 of SKILL.md): ElevenLabs, local, captions-only or silent.
-2. ElevenLabs needs `ELEVENLABS_API_KEY` in `ROOT/.env` (git-ignored). Check that it exists without printing it: `grep -c ELEVENLABS_API_KEY .env`. If it's missing, ask the user to add the line themselves. Never ask them to paste a key into chat, and never echo it.
+1. Ask the user (brief, §1 of SKILL.md): ElevenLabs, Fish Audio, local, captions-only or silent. A user may switch between ElevenLabs and Fish per piece; respect the choice in the brief.
+2. Cloud voices need a key in `ROOT/.env` (git-ignored): `ELEVENLABS_API_KEY` or `FISH_API_KEY`. Check that it exists without printing it: `grep -c FISH_API_KEY .env`. If it's missing, ask the user to add the line themselves. Never ask them to paste a key into chat, and never echo it.
 3. No key, quota exhausted, or offline: use the **local** voice. It's free and unlimited, slightly less expressive.
 
 ## Script text file
@@ -19,6 +19,19 @@ node tools/voice.mjs tts <voiceId> out/voice/<id>.txt out/voice/<id> 0.92
 - The free tier allows ~10k characters/month (break tags count) and premade voices only via the API (library voices return HTTP 402). There's no speech-to-text, so clarity is checked locally. Check the remaining quota: `curl -s https://api.elevenlabs.io/v1/user/subscription -H "xi-api-key: $KEY"`.
 - Tested voices: Alice `Xb7hH8MSUJpSbSDYk0k2` (default, clear educator, speed 0.92), Matilda `XrExE9yKIg1WjnnlVkGX`, Brian `nPczCjzI2devNBz1zQrb`, Eric `cjVigY5qzO86Huf0OWal` (the last two are faster).
 - Get the script reviewed **before** generating, because every regeneration costs credits.
+
+## Fish Audio
+```bash
+research/.venv/bin/python tools/voice_fish.py tts out/voice/<id>.txt out/voice/<id> --voice <modelId> [--speed 1.0]
+research/.venv/bin/python tools/voice_fish.py voices                          # your cloned voices: id, state, title
+research/.venv/bin/python tools/voice_fish.py clone "My voice" rec1.m4a [rec2.wav ...] [--clean]
+```
+- Model header defaults to `s2.1-pro-free` (free, fair use, no SLA); pass `--model s2.1-pro` for the paid tier. Voice id: `--voice`, else `FISH_VOICE_ID` in `.env`. Without either, Fish picks a default voice (fine for a smoke test only).
+- Fish returns audio only. The tool splits on `<break>` tags, synthesises each segment, trims edge silence, inserts the exact pauses, and maps Whisper word timestamps onto the script words (same alignment as the local voice), so `vo.cue()` works unchanged.
+- Segments are cached in `out/voice/.fish_cache/` by text + voice + settings: after a script edit only the changed lines are regenerated.
+- `--speed` is Fish `prosody.speed` (0.5–2.0, 1.0 = natural); `--temperature` / `--top-p` (default 0.7) trade expressiveness for consistency. Lower both to ~0.5 if takes vary too much between segments.
+- Cloning: needs ≥ 10 s of clean single-speaker speech; 1–5 min gives the best clone. `clone` cuts long recordings at sentence boundaries into 10–28 s clips (Fish accepts at most 20), sends transcripts with them, and creates a private, instantly usable voice. It prints the id; put `FISH_VOICE_ID=<id>` in `.env`. `--clean` turns off Fish's noise enhancement for studio-quality audio.
+- Fish normalises numbers itself, but keep the script rules below (numbers as words, dotted acronyms) so on-screen `display` mapping and the clarity check behave the same across engines.
 
 ## Local (Kokoro, offline)
 ```bash

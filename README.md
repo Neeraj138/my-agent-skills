@@ -6,7 +6,7 @@ Personal agent skills. Each skill lives in its own directory with a `SKILL.md` (
 | --- | --- |
 | [media-text](media-text/SKILL.md) | Verbatim OCR from images and speech transcription from audio/video via Gemini Flash Lite. |
 | [visual-explainers](visual-explainers/SKILL.md) | Animated explainers (bento pages, X/LinkedIn posters, blog figures, GIF/MP4) in a named design style (Play for now), with a storyboard step, an automated audit, and an adversarial critic subagent. |
-| [hand-drawn-explainers](hand-drawn-explainers/SKILL.md) | Hand-drawn, Excalidraw-style explainers on any subject (9:16 reels, 16:9 videos, GIFs, slide decks, posters) at 60 fps. The agent asks for audience depth, format, voice and subtitles before building. Ships a bundled animation engine, ElevenLabs or offline Kokoro voice, and fresh-eyes reviews. |
+| [hand-drawn-explainers](hand-drawn-explainers/SKILL.md) | Hand-drawn, Excalidraw-style explainers on any subject (9:16 reels, 16:9 videos, GIFs, slide decks, posters) at 60 fps. The agent asks for audience depth, format, voice and subtitles before building. Ships a bundled animation engine, ElevenLabs, Fish Audio (TTS + voice cloning) or offline Kokoro voice, and fresh-eyes reviews. |
 
 ## Install
 

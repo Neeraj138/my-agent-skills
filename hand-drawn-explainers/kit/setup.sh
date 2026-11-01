@@ -17,8 +17,8 @@ if [ -z "${KOKORO_DIR:-}" ] && [ ! -f assets/tts/kokoro-v1.0.onnx ]; then
   mkdir -p assets/tts
   base=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
   curl -fL -o assets/tts/kokoro-v1.0.onnx "$base/kokoro-v1.0.onnx" && curl -fL -o assets/tts/voices-v1.0.bin "$base/voices-v1.0.bin" \
-    || echo "Kokoro download failed; set KOKORO_DIR later or use ElevenLabs."
+    || echo "Kokoro download failed; set KOKORO_DIR later or use ElevenLabs / Fish Audio."
 fi
 mkdir -p libraries && { curl -fsL https://libraries.excalidraw.com/libraries.json -o libraries/index.json || echo "(could not fetch the Excalidraw library index; optional)"; }
-[ -f .env ] || echo "# ELEVENLABS_API_KEY=..." > .env
+[ -f .env ] || printf '# ELEVENLABS_API_KEY=...\n# FISH_API_KEY=...\n# FISH_VOICE_ID=...\n' > .env
 node render.mjs attention-reel --still 6 --out out/setup_check.png && echo "Ready: $DEST (check out/setup_check.png)"

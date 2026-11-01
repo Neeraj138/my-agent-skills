@@ -1,6 +1,6 @@
 # sketchanim engine API
 
-Files: `engine/sketchanim.js` (engine), `player.html` (preview), `render.mjs` (stills/sheets/MP4 at 60 fps), `engine/hnsw.js` (example of a real algorithm with a trace), `tools/` (`voice.mjs` ElevenLabs, `voice_local.py` offline Kokoro, `asr_check.py` clarity, `srt.mjs` subtitle file, `excalidraw-lib.mjs` icon import).
+Files: `engine/sketchanim.js` (engine), `player.html` (preview), `render.mjs` (stills/sheets/MP4 at 60 fps), `engine/hnsw.js` (example of a real algorithm with a trace), `tools/` (`voice.mjs` ElevenLabs, `voice_fish.py` Fish Audio TTS + cloning, `voice_local.py` offline Kokoro, `asr_check.py` clarity, `srt.mjs` subtitle file, `excalidraw-lib.mjs` icon import).
 
 ## Contents
 1. Scene & camera · 2. Animating · 3. Primitives · 4. Components · 5. Layout · 6. Text & subtitles · 7. Voice · 8. Packs · 9. Rendering · 10. Gotchas · 11. Themes, platforms & formats · 12. Extending
@@ -67,7 +67,7 @@ const vo = s.useVoice('my_vo', { offset: 0.4, display: [['P G vector', 'pgvector
 vo.cue('phrase')     // seconds when the phrase starts (throws if not found — fix the phrase, don't guess times)
 vo.cueEnd('phrase'); vo.end; vo.words
 ```
-Needs `out/voice/my_vo.js` in `requires` (written by `tools/voice.mjs tts` or `tools/voice_local.py`). `display` maps spoken spellings to on-screen spellings.
+Needs `out/voice/my_vo.js` in `requires` (written by `tools/voice.mjs tts`, `tools/voice_fish.py tts` or `tools/voice_local.py`). `display` maps spoken spellings to on-screen spellings.
 
 ## 8. Packs (Excalidraw libraries)
 `requires: ['assets/packs/<slug>.js']`, then `s.sketch({ pack: '<slug>', item: '<name>', height: 200, x, y }).drawIn(t, 1.2)`. Centre-anchored. Colours are mapped like Excalidraw dark mode and snapped to the palette; `tint: C.teal` makes it monochrome; solid fills become hatching unless `solid: true` (so a tinted solid phone renders as a hatched block — render once and look); `text: false` drops labels baked into an icon. Catalogue: `references/packs.md`, gallery images in `assets/packs/gallery/<slug>.png`.

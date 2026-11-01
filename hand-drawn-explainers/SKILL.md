@@ -1,6 +1,6 @@
 ---
 name: hand-drawn-explainers
-description: Make hand-drawn, Excalidraw-style animated explainers on any subject (science, medicine, maths, engineering, history, business, software…) with the bundled sketchanim engine. Outputs — vertical reels/shorts, 16:9 videos, GIFs, slide decks, single stills/posters/sheets — scripted, voiced (ElevenLabs or a local voice) or captions-only, rendered at 60 fps. Use whenever someone wants an explainer, reel, short, animated diagram, step-by-step process animation, "excalidraw-style" visual, or wants to fix, re-voice or polish one of these, even if they don't name the engine.
+description: Make hand-drawn, Excalidraw-style animated explainers on any subject (science, medicine, maths, engineering, history, business, software…) with the bundled sketchanim engine. Outputs — vertical reels/shorts, 16:9 videos, GIFs, slide decks, single stills/posters/sheets — scripted, voiced (ElevenLabs, Fish Audio or a local voice) or captions-only, rendered at 60 fps. Use whenever someone wants an explainer, reel, short, animated diagram, step-by-step process animation, "excalidraw-style" visual, or wants to fix, re-voice or polish one of these, even if they don't name the engine.
 ---
 
 # Hand-drawn explainers
@@ -36,12 +36,12 @@ Ask these in one short message, offer a recommended default for each, and wait f
 | **For a reel: platform(s), series style, hook/cover idea** | sets the safe zone and cover crops; the cover and first 3 s decide whether anyone watches | Instagram · YouTube Shorts · LinkedIn · several (one master for all) · existing series look |
 | **Look** | | dark (default, chalkboard) · light (paper, matches Excalidraw's default) |
 | **Length** | | reel 20–90 s · lesson 2–8 min · slides: number of slides |
-| **Voice** | | ElevenLabs (needs their API key) · local offline voice (free, decent) · captions only · silent |
+| **Voice** | | ElevenLabs (needs their API key) · Fish Audio (API key; free model + voice cloning) · local offline voice (free, decent) · captions only · silent |
 | **Subtitles?** | default is **none**; ask, don't assume | none (default) · burned-in word-synced · separate `.srt` file |
 | **Language & sources** | accuracy | e.g. "follow Robbins & Cotran", "in Spanish", "British voice" |
 | **Anything that must or must not appear** | | a mnemonic, a case example, no maths, show the equation… |
 
-Voice key handling: if they pick ElevenLabs, check `ROOT/.env` for `ELEVENLABS_API_KEY`. If it's missing, ask the user to add it there themselves (never ask them to paste it into chat, never print it). If they don't have one, use the local voice. Details: `references/voiceover.md`.
+Voice key handling: if they pick ElevenLabs or Fish Audio, check `ROOT/.env` for `ELEVENLABS_API_KEY` / `FISH_API_KEY` (and `FISH_VOICE_ID` for their cloned Fish voice). If it's missing, ask the user to add it there themselves (never ask them to paste it into chat, never print it). If they don't have one, use the local voice. Details: `references/voiceover.md`.
 
 Write the answers at the top of `scripts/<topic>.md`. Every later choice is checked against them.
 
@@ -50,7 +50,7 @@ Write the answers at the top of `scripts/<topic>.md`. Every later choice is chec
 1. **Understand the topic** from the sources the user named or standard references. Write 5–15 fact notes under the beat table in `scripts/<topic>.md`. They stay off screen.
 2. **Script**: for a reel, design the **cover and the first 3 seconds first** (`references/reels-attention.md`), then write the rest. A beat table `| # | voiceover / caption | picture | on-screen text |`. Read `references/script-craft.md`, and write every line in STE (`references/ste100.md`). For slides or a poster, the "voiceover" column holds speaker notes or the one sentence the slide must make obvious.
 3. **Script review** with fresh eyes (§5). Fix, then lock the script.
-4. **Voice** (if voiced). ElevenLabs: `node tools/voice.mjs tts <voiceId> out/voice/<id>.txt out/voice/<id> 0.92`. Local: `research/.venv/bin/python tools/voice_local.py out/voice/<id>.txt out/voice/<id> --voice af_heart --speed 0.9`. Then check clarity with `research/.venv/bin/python tools/asr_check.py <plain.txt> out/voice/<id>.mp3`.
+4. **Voice** (if voiced). ElevenLabs: `node tools/voice.mjs tts <voiceId> out/voice/<id>.txt out/voice/<id> 0.92`. Fish Audio: `research/.venv/bin/python tools/voice_fish.py tts out/voice/<id>.txt out/voice/<id> --voice <modelId>` (cloning: `voice_fish.py clone`). Local: `research/.venv/bin/python tools/voice_local.py out/voice/<id>.txt out/voice/<id> --voice af_heart --speed 0.9`. Then check clarity with `research/.venv/bin/python tools/asr_check.py <plain.txt> out/voice/<id>.mp3`.
 5. **Build** `scenes/<name>.js` (subtitles are off unless the user asked: then `s.useVoice(id, { subtitles: true })` + `s.scrim()`) from `templates/` (`reel.js` voiced 9:16, `reel-captions.js` captions-only, `landscape.js` 16:9 / slides). Add the name to `scenes/index.js`. API: `references/engine-api.md`. Icons: `references/packs.md`. Visual rules: `references/visual-quality.md`.
 6. **Check stills** at every beat: `node render.mjs <name> --sheet t1,t2,… --safe --out out/<name>_sheet.png`. Open the sheet and look at it, then run the frame checklist in `references/visual-quality.md`. **Phone test:** each tile is about 480 px wide. If a label can't be read in the tile, it's too small. Open single frames at full size (`--still t`) for anything dense. Fix and repeat until the checklist is clean.
 7. **Render review** with fresh eyes (§5), using a sheet every ~2 s plus the script. Fix, then re-check.
